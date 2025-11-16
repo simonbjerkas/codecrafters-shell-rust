@@ -32,7 +32,7 @@ fn main() {
         match command {
             Some(Commands::Exit) => break,
             Some(Commands::Echo { args }) => println!("{}", args.join(" ")),
-            None => println!("command not found"),
+            None => println!("{}: command not found", input.trim()),
         }
     }
 }
