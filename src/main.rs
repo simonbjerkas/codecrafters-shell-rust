@@ -25,10 +25,10 @@ impl Commands {
                 }
             }
             "echo" => Some(Commands::Echo {
-                args: input.remainder(),
+                args: input.remainder().unwrap().to_string(),
             }),
             "type" => Some(Commands::Type {
-                args: input.remainder(),
+                args: input.remainder().unwrap().to_string(),
             }),
             _ => None,
         }
