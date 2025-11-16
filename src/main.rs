@@ -10,12 +10,11 @@ const COMMANDS: [&str; 3] = ["exit", "echo", "type"];
 
 impl Commands {
     fn from_input(input: &str) -> Option<Commands> {
-        let mut input = input.trim().split_whitespace();
-        let command_type = input.next().unwrap_or("").to_lowercase();
+        let (command_type, args) = input.trim().split_once(' ').unwrap_or(("", input));
 
-        match command_type.as_str() {
+        match command_type {
             "exit" => {
-                let args = input.next();
+                let args = args.split_whitespace().next();
                 match args {
                     Some(arg) => match arg.parse::<i32>() {
                         Ok(num) => Some(Commands::Exit { args: num }),
@@ -25,10 +24,10 @@ impl Commands {
                 }
             }
             "echo" => Some(Commands::Echo {
-                args: input.remainder().unwrap().to_string(),
+                args: args.to_string(),
             }),
             "type" => Some(Commands::Type {
-                args: input.remainder().unwrap().to_string(),
+                args: args.to_string(),
             }),
             _ => None,
         }
