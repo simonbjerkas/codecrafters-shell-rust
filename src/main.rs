@@ -16,6 +16,9 @@ fn main() {
         if command.is_empty() {
             continue;
         }
+        if command == "exit 0" {
+            break;
+        }
 
         println!("{}: command not found", command);
     }
