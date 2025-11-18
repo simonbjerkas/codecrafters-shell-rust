@@ -50,10 +50,9 @@ impl Commands {
                 let paths = var_os(key).unwrap_or_default();
 
                 for path in split_paths(&paths) {
-                    if path.as_os_str().to_str().unwrap() == cmd {
-                        if Self::is_executable(&path) {
-                            return format!("{} is {}", cmd, path.display());
-                        }
+                    let cmd_path = path.join(cmd);
+                    if Path::new(&cmd_path).exists() & Self::is_executable(&cmd_path) {
+                        return format!("{} is {}", cmd, path.display());
                     }
                 }
                 format!("{}: not found", cmd)
