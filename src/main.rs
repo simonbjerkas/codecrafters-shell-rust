@@ -47,14 +47,15 @@ impl Commands {
             Commands::Type { .. } => format!("{} is a shell builtin", Self::TYPE_CMD),
             Commands::Unknown { cmd } => {
                 let key = "PATH";
-                let paths = var_os(key).unwrap_or_default();
-
-                for path in split_paths(&paths) {
-                    let cmd_path = path.join(cmd);
-                    if Path::new(&cmd_path).exists() & Self::is_executable(&cmd_path) {
-                        return format!("{} is {}", cmd, path.display());
+                if let Some(paths) = var_os(key) {
+                    for path in split_paths(&paths) {
+                        let cmd_path = path.join(cmd);
+                        if Path::new(&cmd_path).exists() & Self::is_executable(&cmd_path) {
+                            return format!("{} is {}", cmd, path.display());
+                        }
                     }
                 }
+
                 format!("{}: not found", cmd)
             }
         }
