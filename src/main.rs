@@ -4,6 +4,7 @@ use std::{
     io::{self, Write},
     os::unix::fs::MetadataExt,
     path::Path,
+    process::Command,
     str::FromStr,
 };
 
@@ -45,7 +46,7 @@ impl Commands {
             Commands::Exit { .. } => format!("{} is a shell builtin", Self::EXIT_CMD),
             Commands::Echo { .. } => format!("{} is a shell builtin", Self::ECHO_CMD),
             Commands::Type { .. } => format!("{} is a shell builtin", Self::TYPE_CMD),
-            Commands::Unknown { cmd } => {
+            Commands::Unknown { cmd, .. } => {
                 let key = "PATH";
                 if let Some(paths) = var_os(key) {
                     for path in split_paths(&paths) {
@@ -87,9 +88,29 @@ impl FromStr for Commands {
             Self::TYPE_CMD => Ok(Self::Type {
                 cmd_to_evaluate: args.to_string(),
             }),
-            command => Ok(Commands::Unknown {
-                cmd: command.to_string(),
-            }),
+            command => {
+                let key = "PATH";
+                if let Some(paths) = var_os(key) {
+                    for path in split_paths(&paths) {
+                        let cmd_path = path.join(command);
+                        if Path::new(&cmd_path).exists() & Self::is_executable(&cmd_path) {
+                            let args = args.trim().split_whitespace();
+                            let mut program = Command::new(&cmd_path);
+
+                            let output = program
+                                .args(args)
+                                .output()
+                                .expect("Failes to execute command");
+
+                            println!("{}", String::from_utf8_lossy(&output.stdout))
+                        }
+                    }
+                }
+
+                Ok(Commands::Unknown {
+                    cmd: command.to_string(),
+                })
+            }
         }
     }
 }
@@ -112,6 +133,7 @@ fn main() {
                     .unwrap_or(Commands::Empty);
                 println!("{}", evaluated_cmd.type_description())
             }
+            Commands::Unknown { cmd } => {}
             _ => println!("{}: command not found", input.trim()),
         }
     }
