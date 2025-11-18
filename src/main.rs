@@ -1,5 +1,5 @@
 use std::{
-    env::{split_paths, var},
+    env::{split_paths, var_os},
     fs,
     io::{self, Write},
     os::unix::fs::MetadataExt,
@@ -47,11 +47,11 @@ impl Commands {
             Commands::Type { .. } => format!("{} is a shell builtin", Self::TYPE_CMD),
             Commands::Unknown { cmd } => {
                 let key = "PATH";
-                if let Ok(paths) = var(key) {
+                if let Some(paths) = var_os(key) {
                     for path in split_paths(&paths) {
                         let cmd_path = path.join(cmd);
                         if Path::new(&cmd_path).exists() & Self::is_executable(&cmd_path) {
-                            return format!("{} is {}", cmd, path.display());
+                            return format!("{} is {}", cmd, cmd_path.display());
                         }
                     }
                 }
