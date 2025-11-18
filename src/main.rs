@@ -78,7 +78,7 @@ impl FromStr for Commands {
                             Err(_) => Err(CommandParsingError),
                         }
                     }
-                    None => Err(CommandParsingError),
+                    None => Ok(Commands::Exit { status: 0 }),
                 }
             }
             Self::ECHO_CMD => Ok(Self::Echo {
