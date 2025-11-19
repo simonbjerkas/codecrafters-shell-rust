@@ -100,6 +100,7 @@ impl Commands {
                         }
                     }
                 }
+                println!("{}: command not found", cmd)
             }
             Self::Empty => {}
         }
