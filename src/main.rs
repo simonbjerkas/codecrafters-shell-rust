@@ -31,7 +31,8 @@ fn parse_args(
 
         let mut in_single = false;
         let mut in_double = false;
-        let mut escape = false;
+
+        let mut args_iter = args.chars().peekable();
 
         let push_token = |buffer: &mut String, tokens: &mut Vec<String>| {
             if !buffer.is_empty() {
@@ -39,16 +40,25 @@ fn parse_args(
             }
         };
 
-        for char in args.chars() {
-            if escape {
-                buf.push(char);
-                escape = false;
-                continue;
-            }
-
+        while let Some(char) = args_iter.next() {
             match char {
                 '\\' if !in_single => {
-                    escape = true;
+                    if in_double {
+                        if let Some(next_char) = args_iter.peek() {
+                            match next_char {
+                                '$' | '`' | '"' | '\\' => {
+                                    buf.push(args_iter.next().unwrap());
+                                }
+                                '\n' => {
+                                    args_iter.next();
+                                }
+                                _ => {
+                                    buf.push(char);
+                                    buf.push(args_iter.next().unwrap());
+                                }
+                            }
+                        }
+                    }
                 }
                 '\'' if !in_double => {
                     in_single = !in_single;
