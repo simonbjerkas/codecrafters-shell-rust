@@ -43,6 +43,8 @@ fn parse_args(
                 '\'' => {
                     if !in_double {
                         in_single = !in_single;
+                    } else {
+                        buf.push(char);
                     }
                 }
                 '"' => {
