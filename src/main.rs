@@ -50,8 +50,6 @@ fn parse_args(
                 '\\' => {
                     if !in_single {
                         escape = true;
-                    } else {
-                        buf.push(char);
                     }
                 }
                 '\'' => {
