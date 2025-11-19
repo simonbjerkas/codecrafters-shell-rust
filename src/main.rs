@@ -21,6 +21,69 @@ enum Commands {
     Cd { directory: String },
 }
 
+fn parse_args(args: &str, expected_amount: i8) -> Result<Vec<String>, CommandParsingError> {
+    if args.chars().any(|c| c == '\'' || c == '"') {
+        let mut results = Vec::new();
+        let mut buf = String::new();
+
+        let mut in_single = false;
+        let mut in_double = false;
+
+        let push_token = |buffer: &mut String, tokens: &mut Vec<String>| {
+            if !buffer.is_empty() {
+                tokens.push(std::mem::take(buffer))
+            }
+        };
+
+        for char in args.chars() {
+            match char {
+                '\'' => {
+                    if !in_double {
+                        in_single = !in_single;
+                    }
+                    continue;
+                }
+                '"' => {
+                    if !in_single {
+                        in_double = !in_double;
+                    }
+                    continue;
+                }
+                c if c.is_whitespace() && !in_single && !in_double => {
+                    push_token(&mut buf, &mut results);
+                }
+                _ => buf.push(char),
+            }
+        }
+
+        if !buf.is_empty() {
+            push_token(&mut buf, &mut results);
+        }
+
+        if results.len()
+            != expected_amount
+                .try_into()
+                .expect("Failed to convert expected amount to usize")
+        {
+            return Err(CommandParsingError);
+        }
+
+        return Ok(results);
+    }
+
+    let args: Vec<String> = args.split_whitespace().map(|arg| arg.to_string()).collect();
+
+    if args.len()
+        != expected_amount
+            .try_into()
+            .expect("Failed to convert expected amount to usize")
+    {
+        return Err(CommandParsingError);
+    }
+
+    return Ok(args);
+}
+
 impl Commands {
     const EXIT_CMD: &'static str = "exit";
     const ECHO_CMD: &'static str = "echo";
@@ -137,7 +200,7 @@ impl FromStr for Commands {
 
         match command_type {
             Self::EXIT_CMD => Ok(Self::Exit {
-                arg: args.to_string(),
+                arg: parse_args(args, 1).unwrap()[0].clone(),
             }),
             Self::ECHO_CMD => Ok(Self::Echo {
                 display_string: args.to_string(),
@@ -151,7 +214,7 @@ impl FromStr for Commands {
             }),
             command => Ok(Commands::Unknown {
                 cmd: command.to_string(),
-                args: args.split_whitespace().map(|arg| arg.to_owned()).collect(),
+                args: parse_args(args, -1).unwrap(),
             }),
         }
     }
