@@ -1,5 +1,5 @@
 use std::{
-    env::{split_paths, var_os},
+    env::{self, split_paths, var_os},
     fs,
     io::{self, Write},
     os::unix::fs::MetadataExt,
@@ -17,12 +17,14 @@ enum Commands {
     Type { cmd_to_evaluate: String },
     Empty,
     Unknown { cmd: String, args: Vec<String> },
+    Pwd,
 }
 
 impl Commands {
     const EXIT_CMD: &'static str = "exit";
     const ECHO_CMD: &'static str = "echo";
     const TYPE_CMD: &'static str = "type";
+    const PWD_CMD: &'static str = "pwd";
 
     fn is_executable(path: &Path) -> bool {
         fs::metadata(path)
@@ -46,6 +48,7 @@ impl Commands {
             Commands::Exit { .. } => format!("{} is a shell builtin", Self::EXIT_CMD),
             Commands::Echo { .. } => format!("{} is a shell builtin", Self::ECHO_CMD),
             Commands::Type { .. } => format!("{} is a shell builtin", Self::TYPE_CMD),
+            Commands::Pwd => format!("{} is a shell builtin", Self::PWD_CMD),
             Commands::Unknown { cmd, .. } => {
                 let key = "PATH";
                 if let Some(paths) = var_os(key) {
@@ -103,6 +106,11 @@ impl Commands {
                 println!("{}: command not found", cmd)
             }
             Self::Empty => {}
+            Self::Pwd => {
+                if let Ok(current_dir) = env::current_dir() {
+                    println!("{}", current_dir.display())
+                }
+            }
         }
     }
 }
@@ -122,6 +130,7 @@ impl FromStr for Commands {
             Self::TYPE_CMD => Ok(Self::Type {
                 cmd_to_evaluate: args.to_string(),
             }),
+            Self::PWD_CMD => Ok(Self::Pwd),
             command => Ok(Commands::Unknown {
                 cmd: command.to_string(),
                 args: args.split_whitespace().map(|arg| arg.to_owned()).collect(),
@@ -140,11 +149,12 @@ fn main() {
 
         let command = Commands::from_str(&input).unwrap();
         match command {
+            Commands::Empty => {}
             Commands::Exit { arg } => Commands::Exit { arg }.execute(),
             Commands::Echo { display_string } => Commands::Echo { display_string }.execute(),
             Commands::Type { cmd_to_evaluate } => Commands::Type { cmd_to_evaluate }.execute(),
             Commands::Unknown { cmd, args } => Commands::Unknown { cmd, args }.execute(),
-            Commands::Empty => {}
+            Commands::Pwd => Commands::Pwd.execute(),
         }
     }
 }
