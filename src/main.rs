@@ -47,22 +47,14 @@ fn parse_args(
             }
 
             match char {
-                '\\' => {
-                    if !in_single {
-                        escape = true;
-                    }
+                '\\' if !in_single => {
+                    escape = true;
                 }
-                '\'' => {
-                    if !in_double {
-                        in_single = !in_single;
-                    } else {
-                        buf.push(char);
-                    }
+                '\'' if !in_double => {
+                    in_single = !in_single;
                 }
-                '"' => {
-                    if !in_single {
-                        in_double = !in_double;
-                    }
+                '"' if !in_single => {
+                    in_double = !in_double;
                 }
                 c if c.is_whitespace() && !in_single && !in_double => {
                     push_token(&mut buf, &mut results);
