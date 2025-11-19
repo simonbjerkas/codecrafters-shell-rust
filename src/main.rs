@@ -96,7 +96,7 @@ impl Commands {
                                 .expect("Failed to execute command");
 
                             let _status = process.wait().expect("Something went wrong");
-                            break;
+                            return;
                         }
                     }
                 }
