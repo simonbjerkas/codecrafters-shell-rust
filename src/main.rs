@@ -4,7 +4,7 @@ use std::{
     io::{self, Write},
     os::unix::fs::MetadataExt,
     path::Path,
-    process::Command,
+    process::{self, Command},
     str::FromStr,
 };
 
@@ -12,11 +12,11 @@ use std::{
 struct CommandParsingError;
 
 enum Commands {
-    Exit { status: i32 },
+    Exit { arg: String },
     Echo { display_string: String },
     Type { cmd_to_evaluate: String },
     Empty,
-    Unknown { cmd: String },
+    Unknown { cmd: String, args: Vec<String> },
 }
 
 impl Commands {
@@ -61,41 +61,34 @@ impl Commands {
             }
         }
     }
-}
 
-impl FromStr for Commands {
-    type Err = CommandParsingError;
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
-        let (command_type, args) = input.trim().split_once(' ').unwrap_or((input.trim(), ""));
+    fn execute(&self) {
+        match self {
+            Self::Exit { arg } => {
+                let code = arg
+                    .split_whitespace()
+                    .next()
+                    .expect("Expected code as argument");
 
-        match command_type {
-            Self::EXIT_CMD => {
-                let status = args.split_whitespace().next();
-                match status {
-                    Some(code) => {
-                        let status = code.parse();
-                        match status {
-                            Ok(status) => Ok(Commands::Exit { status }),
-                            Err(_) => Err(CommandParsingError),
-                        }
-                    }
-                    None => Ok(Commands::Exit { status: 0 }),
-                }
+                let status = code
+                    .parse::<i32>()
+                    .expect("Expected argument to be integer");
+                process::exit(status)
             }
-            Self::ECHO_CMD => Ok(Self::Echo {
-                display_string: args.to_string(),
-            }),
-            Self::TYPE_CMD => Ok(Self::Type {
-                cmd_to_evaluate: args.to_string(),
-            }),
-            command => {
+            Self::Echo { display_string } => println!("{}", display_string),
+            Self::Type { cmd_to_evaluate } => {
+                let evaluated_cmd = cmd_to_evaluate
+                    .parse::<Commands>()
+                    .unwrap_or(Commands::Empty);
+                println!("{}", evaluated_cmd.type_description())
+            }
+            Self::Unknown { cmd, args } => {
                 let key = "PATH";
                 if let Some(paths) = var_os(key) {
                     for path in split_paths(&paths) {
-                        let cmd_path = path.join(&command);
+                        let cmd_path = path.join(&cmd);
                         if Path::new(&cmd_path).exists() & Self::is_executable(&cmd_path) {
-                            let args = args.trim().split_whitespace();
-                            let mut program = Command::new(&command);
+                            let mut program = Command::new(&cmd);
 
                             let mut process = program
                                 .args(args)
@@ -107,11 +100,31 @@ impl FromStr for Commands {
                         }
                     }
                 }
-
-                Ok(Commands::Unknown {
-                    cmd: command.to_string(),
-                })
             }
+            Self::Empty => {}
+        }
+    }
+}
+
+impl FromStr for Commands {
+    type Err = CommandParsingError;
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        let (command_type, args) = input.trim().split_once(' ').unwrap_or((input.trim(), ""));
+
+        match command_type {
+            Self::EXIT_CMD => Ok(Self::Exit {
+                arg: args.to_string(),
+            }),
+            Self::ECHO_CMD => Ok(Self::Echo {
+                display_string: args.to_string(),
+            }),
+            Self::TYPE_CMD => Ok(Self::Type {
+                cmd_to_evaluate: args.to_string(),
+            }),
+            command => Ok(Commands::Unknown {
+                cmd: command.to_string(),
+                args: args.split_whitespace().map(|arg| arg.to_owned()).collect(),
+            }),
         }
     }
 }
@@ -126,16 +139,11 @@ fn main() {
 
         let command = Commands::from_str(&input).unwrap();
         match command {
-            Commands::Exit { status } => std::process::exit(status),
-            Commands::Echo { display_string } => println!("{}", display_string),
-            Commands::Type { cmd_to_evaluate } => {
-                let evaluated_cmd = cmd_to_evaluate
-                    .parse::<Commands>()
-                    .unwrap_or(Commands::Empty);
-                println!("{}", evaluated_cmd.type_description())
-            }
-            Commands::Unknown { cmd } => {}
-            _ => println!("{}: command not found", input.trim()),
+            Commands::Exit { arg } => Commands::Exit { arg }.execute(),
+            Commands::Echo { display_string } => Commands::Echo { display_string }.execute(),
+            Commands::Type { cmd_to_evaluate } => Commands::Type { cmd_to_evaluate }.execute(),
+            Commands::Unknown { cmd, args } => Commands::Unknown { cmd, args }.execute(),
+            Commands::Empty => {}
         }
     }
 }
