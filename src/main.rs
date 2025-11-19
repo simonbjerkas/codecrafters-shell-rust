@@ -13,7 +13,7 @@ struct CommandParsingError;
 
 enum Commands {
     Exit { arg: String },
-    Echo { display_string: String },
+    Echo { display_string: Vec<String> },
     Type { cmd_to_evaluate: String },
     Empty,
     Unknown { cmd: String, args: Vec<String> },
@@ -21,7 +21,10 @@ enum Commands {
     Cd { directory: String },
 }
 
-fn parse_args(args: &str, expected_amount: i8) -> Result<Vec<String>, CommandParsingError> {
+fn parse_args(
+    args: &str,
+    expected_amount: Option<usize>,
+) -> Result<Vec<String>, CommandParsingError> {
     if args.chars().any(|c| c == '\'' || c == '"') {
         let mut results = Vec::new();
         let mut buf = String::new();
@@ -41,13 +44,11 @@ fn parse_args(args: &str, expected_amount: i8) -> Result<Vec<String>, CommandPar
                     if !in_double {
                         in_single = !in_single;
                     }
-                    continue;
                 }
                 '"' => {
                     if !in_single {
                         in_double = !in_double;
                     }
-                    continue;
                 }
                 c if c.is_whitespace() && !in_single && !in_double => {
                     push_token(&mut buf, &mut results);
@@ -60,25 +61,30 @@ fn parse_args(args: &str, expected_amount: i8) -> Result<Vec<String>, CommandPar
             push_token(&mut buf, &mut results);
         }
 
-        if results.len()
-            != expected_amount
-                .try_into()
-                .expect("Failed to convert expected amount to usize")
-        {
-            return Err(CommandParsingError);
+        match expected_amount {
+            Some(expected) => {
+                if results.len() != expected {
+                    return Err(CommandParsingError);
+                }
+            }
+            None => {}
         }
 
         return Ok(results);
     }
 
-    let args: Vec<String> = args.split_whitespace().map(|arg| arg.to_string()).collect();
+    let args: Vec<String> = args
+        .split_whitespace()
+        .map(|arg| arg.trim().to_string())
+        .collect();
 
-    if args.len()
-        != expected_amount
-            .try_into()
-            .expect("Failed to convert expected amount to usize")
-    {
-        return Err(CommandParsingError);
+    match expected_amount {
+        Some(expected) => {
+            if args.len() != expected {
+                return Err(CommandParsingError);
+            }
+        }
+        None => {}
     }
 
     return Ok(args);
@@ -144,7 +150,12 @@ impl Commands {
                     .expect("Expected argument to be integer");
                 process::exit(status)
             }
-            Self::Echo { display_string } => println!("{}", display_string),
+            Self::Echo { display_string } => {
+                for line in display_string {
+                    print!("{} ", line);
+                }
+                println!("")
+            }
             Self::Type { cmd_to_evaluate } => {
                 let evaluated_cmd = cmd_to_evaluate
                     .parse::<Commands>()
@@ -200,10 +211,10 @@ impl FromStr for Commands {
 
         match command_type {
             Self::EXIT_CMD => Ok(Self::Exit {
-                arg: parse_args(args, 1).unwrap()[0].clone(),
+                arg: parse_args(args, Some(1)).unwrap()[0].clone(),
             }),
             Self::ECHO_CMD => Ok(Self::Echo {
-                display_string: args.to_string(),
+                display_string: parse_args(args, None).unwrap(),
             }),
             Self::TYPE_CMD => Ok(Self::Type {
                 cmd_to_evaluate: args.to_string(),
@@ -214,7 +225,7 @@ impl FromStr for Commands {
             }),
             command => Ok(Commands::Unknown {
                 cmd: command.to_string(),
-                args: parse_args(args, -1).unwrap(),
+                args: parse_args(args, None).unwrap(),
             }),
         }
     }
