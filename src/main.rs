@@ -48,10 +48,8 @@ fn parse_args(
 
             match char {
                 '\\' => {
-                    if !in_single && !in_double {
+                    if !in_single {
                         escape = true;
-                    } else {
-                        buf.push(char);
                     }
                 }
                 '\'' => {
