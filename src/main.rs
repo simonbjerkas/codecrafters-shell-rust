@@ -18,6 +18,7 @@ enum Commands {
     Empty,
     Unknown { cmd: String, args: Vec<String> },
     Pwd,
+    Cd { directory: String },
 }
 
 impl Commands {
@@ -25,6 +26,7 @@ impl Commands {
     const ECHO_CMD: &'static str = "echo";
     const TYPE_CMD: &'static str = "type";
     const PWD_CMD: &'static str = "pwd";
+    const CD_CMD: &'static str = "cd";
 
     fn is_executable(path: &Path) -> bool {
         fs::metadata(path)
@@ -49,6 +51,7 @@ impl Commands {
             Commands::Echo { .. } => format!("{} is a shell builtin", Self::ECHO_CMD),
             Commands::Type { .. } => format!("{} is a shell builtin", Self::TYPE_CMD),
             Commands::Pwd => format!("{} is a shell builtin", Self::PWD_CMD),
+            Commands::Cd { .. } => format!("{} is a shell builtin", Self::CD_CMD),
             Commands::Unknown { cmd, .. } => {
                 let key = "PATH";
                 if let Some(paths) = var_os(key) {
@@ -111,6 +114,8 @@ impl Commands {
                     println!("{}", current_dir.display())
                 }
             }
+            Self::Cd { directory } => env::set_current_dir(directory)
+                .unwrap_or(println!("cd: {}: No such file or directory", directory)),
         }
     }
 }
@@ -131,6 +136,9 @@ impl FromStr for Commands {
                 cmd_to_evaluate: args.to_string(),
             }),
             Self::PWD_CMD => Ok(Self::Pwd),
+            Self::CD_CMD => Ok(Self::Cd {
+                directory: args.to_string(),
+            }),
             command => Ok(Commands::Unknown {
                 cmd: command.to_string(),
                 args: args.split_whitespace().map(|arg| arg.to_owned()).collect(),
@@ -155,6 +163,7 @@ fn main() {
             Commands::Type { cmd_to_evaluate } => Commands::Type { cmd_to_evaluate }.execute(),
             Commands::Unknown { cmd, args } => Commands::Unknown { cmd, args }.execute(),
             Commands::Pwd => Commands::Pwd.execute(),
+            Commands::Cd { directory } => Commands::Cd { directory }.execute(),
         }
     }
 }
