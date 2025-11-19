@@ -92,10 +92,10 @@ impl FromStr for Commands {
                 let key = "PATH";
                 if let Some(paths) = var_os(key) {
                     for path in split_paths(&paths) {
-                        let cmd_path = path.join(command);
+                        let cmd_path = path.join(&command);
                         if Path::new(&cmd_path).exists() & Self::is_executable(&cmd_path) {
                             let args = args.trim().split_whitespace();
-                            let mut program = Command::new(&cmd_path);
+                            let mut program = Command::new(&command);
 
                             let mut process = program
                                 .args(args)
