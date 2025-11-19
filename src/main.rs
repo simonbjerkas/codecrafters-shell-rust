@@ -97,12 +97,13 @@ impl FromStr for Commands {
                             let args = args.trim().split_whitespace();
                             let mut program = Command::new(&cmd_path);
 
-                            let output = program
+                            let mut process = program
                                 .args(args)
-                                .output()
-                                .expect("Failes to execute command");
+                                .spawn()
+                                .expect("Failed to execute command");
 
-                            println!("{}", String::from_utf8_lossy(&output.stdout))
+                            let _status = process.wait().expect("Something went wrong");
+                            break;
                         }
                     }
                 }
