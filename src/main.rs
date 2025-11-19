@@ -114,8 +114,18 @@ impl Commands {
                     println!("{}", current_dir.display())
                 }
             }
-            Self::Cd { directory } => env::set_current_dir(directory)
-                .unwrap_or_else(|_| println!("cd: {}: No such file or directory", directory)),
+            Self::Cd { directory } => {
+                if directory.starts_with('~') {
+                    let key = "HOME";
+                    let home = var_os(key).unwrap_or_default();
+                    let path = directory.replace('~', home.to_str().unwrap_or_default());
+                    env::set_current_dir(path).unwrap();
+                } else {
+                    env::set_current_dir(directory).unwrap_or_else(|_| {
+                        println!("cd: {}: No such file or directory", directory)
+                    })
+                }
+            }
         }
     }
 }
