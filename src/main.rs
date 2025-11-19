@@ -25,7 +25,7 @@ fn parse_args(
     args: &str,
     expected_amount: Option<usize>,
 ) -> Result<Vec<String>, CommandParsingError> {
-    if args.chars().any(|c| c == '\'' || c == '"') {
+    if args.chars().any(|c| c == '\'' || c == '"' || c == '\\') {
         let mut results = Vec::new();
         let mut buf = String::new();
 
@@ -45,6 +45,7 @@ fn parse_args(
                 escape = false;
                 continue;
             }
+
             match char {
                 '\\' => {
                     escape = true;
