@@ -211,7 +211,11 @@ impl FromStr for Commands {
 
         match command_type {
             Self::EXIT_CMD => Ok(Self::Exit {
-                arg: parse_args(args, Some(1)).unwrap()[0].clone(),
+                arg: parse_args(args, Some(1))
+                    .unwrap_or(vec!["".to_string()])
+                    .first()
+                    .unwrap()
+                    .clone(),
             }),
             Self::ECHO_CMD => Ok(Self::Echo {
                 display_string: parse_args(args, None).unwrap(),
