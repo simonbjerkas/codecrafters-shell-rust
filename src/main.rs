@@ -115,7 +115,7 @@ impl Commands {
                 }
             }
             Self::Cd { directory } => env::set_current_dir(directory)
-                .unwrap_or(println!("cd: {}: No such file or directory", directory)),
+                .unwrap_or_else(|_| println!("cd: {}: No such file or directory", directory)),
         }
     }
 }
