@@ -25,85 +25,64 @@ fn parse_args(
     args: &str,
     expected_amount: Option<usize>,
 ) -> Result<Vec<String>, CommandParsingError> {
-    if args.chars().any(|c| c == '\'' || c == '"' || c == '\\') {
-        let mut results = Vec::new();
-        let mut buf = String::new();
+    let mut tokens = Vec::new();
+    let mut buf = String::new();
 
-        let mut in_single = false;
-        let mut in_double = false;
+    let mut in_single = false;
+    let mut in_double = false;
 
-        let mut args_iter = args.chars().peekable();
+    let mut args = args.chars().peekable();
 
-        let push_token = |buffer: &mut String, tokens: &mut Vec<String>| {
-            if !buffer.is_empty() {
-                tokens.push(std::mem::take(buffer))
-            }
-        };
+    let push_token = |buffer: &mut String, tokens: &mut Vec<String>| {
+        if !buffer.is_empty() {
+            tokens.push(std::mem::take(buffer))
+        }
+    };
 
-        while let Some(char) = args_iter.next() {
-            match char {
-                '\\' if !in_single => {
-                    if in_double {
-                        if let Some(next_char) = args_iter.peek() {
-                            match next_char {
-                                '$' | '`' | '"' | '\\' => {
-                                    buf.push(args_iter.next().unwrap());
-                                }
-                                '\n' => {
-                                    args_iter.next();
-                                }
-                                _ => {
-                                    buf.push(char);
-                                    buf.push(args_iter.next().unwrap());
-                                }
-                            }
-                        }
+    while let Some(c) = args.next() {
+        match c {
+            '\\' => {
+                if in_single {
+                    buf.push(c);
+                } else {
+                    if let Some(next_char) = args.next() {
+                        buf.push(next_char);
                     }
                 }
-                '\'' if !in_double => {
+            }
+            '\'' => {
+                if !in_double {
                     in_single = !in_single;
                 }
-                '"' if !in_single => {
+            }
+            '"' => {
+                if !in_single {
                     in_double = !in_double;
                 }
-                c if c.is_whitespace() && !in_single && !in_double => {
-                    push_token(&mut buf, &mut results);
-                }
-                _ => buf.push(char),
+            }
+            ch if ch.is_whitespace() && !in_single && !in_double => {
+                push_token(&mut buf, &mut tokens)
+            }
+            _ => {
+                buf.push(c);
             }
         }
-
-        if !buf.is_empty() {
-            push_token(&mut buf, &mut results);
-        }
-
-        match expected_amount {
-            Some(expected) => {
-                if results.len() != expected {
-                    return Err(CommandParsingError);
-                }
-            }
-            None => {}
-        }
-
-        return Ok(results);
     }
 
-    let args: Vec<String> = args
-        .split_whitespace()
-        .map(|arg| arg.trim().to_string())
-        .collect();
+    if !buf.is_empty() {
+        push_token(&mut buf, &mut tokens);
+    }
 
     match expected_amount {
         Some(expected) => {
-            if args.len() != expected {
+            if tokens.len() != expected {
                 return Err(CommandParsingError);
             }
         }
         None => {}
     }
 
-    return Ok(args);
+    return Ok(tokens);
 }
 
 impl Commands {
