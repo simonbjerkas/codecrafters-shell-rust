@@ -21,17 +21,14 @@ enum Commands {
     Cd { directory: String },
 }
 
-fn parse_args(
-    args: &str,
-    expected_amount: Option<usize>,
-) -> Result<Vec<String>, CommandParsingError> {
+fn parse_command(input: &str) -> Result<Vec<String>, CommandParsingError> {
     let mut tokens = Vec::new();
     let mut buf = String::new();
 
     let mut in_single = false;
     let mut in_double = false;
 
-    let mut args = args.chars().peekable();
+    let mut args = input.chars().peekable();
 
     let push_token = |buffer: &mut String, tokens: &mut Vec<String>| {
         if !buffer.is_empty() {
@@ -91,15 +88,6 @@ fn parse_args(
 
     if !buf.is_empty() {
         push_token(&mut buf, &mut tokens);
-    }
-
-    match expected_amount {
-        Some(expected) => {
-            if tokens.len() != expected {
-                return Err(CommandParsingError);
-            }
-        }
-        None => {}
     }
 
     return Ok(tokens);
@@ -222,29 +210,28 @@ impl Commands {
 impl FromStr for Commands {
     type Err = CommandParsingError;
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        let (command_type, args) = input.trim().split_once(' ').unwrap_or((input.trim(), ""));
+        let command_input = parse_command(&input).unwrap();
+
+        let command_type = command_input.first().unwrap().as_str();
+        let args = command_input[1..].to_vec();
 
         match command_type {
             Self::EXIT_CMD => Ok(Self::Exit {
-                arg: parse_args(args, Some(1))
-                    .unwrap_or(vec!["".to_string()])
-                    .first()
-                    .unwrap()
-                    .clone(),
+                arg: args.get(0).cloned().unwrap_or_default(),
             }),
             Self::ECHO_CMD => Ok(Self::Echo {
-                display_string: parse_args(args, None).unwrap(),
+                display_string: args,
             }),
             Self::TYPE_CMD => Ok(Self::Type {
-                cmd_to_evaluate: args.to_string(),
+                cmd_to_evaluate: args.get(0).cloned().unwrap_or_default(),
             }),
             Self::PWD_CMD => Ok(Self::Pwd),
             Self::CD_CMD => Ok(Self::Cd {
-                directory: args.to_string(),
+                directory: args.get(0).cloned().unwrap_or_default(),
             }),
             command => Ok(Commands::Unknown {
                 cmd: command.to_string(),
-                args: parse_args(args, None).unwrap(),
+                args,
             }),
         }
     }
