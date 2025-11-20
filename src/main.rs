@@ -44,8 +44,24 @@ fn parse_args(
             '\\' => {
                 if in_single {
                     buf.push(c);
-                } else {
-                    if let Some(next_char) = args.next() {
+                } else if in_double {
+                    match args.peek().copied() {
+                        Some('$') | Some('`') | Some('"') | Some('\\') => {
+                            if let Some(next_char) = args.next() {
+                                buf.push(next_char);
+                            }
+                        }
+                        Some('\n') => {
+                            args.next();
+                        }
+                        Some(other) => {
+                            buf.push(ch);
+                            buf.push(other);
+                            args.next();
+                        }
+                        None => {}
+                    }
+                } else if let Some(next_char) = args.next() {
                         buf.push(next_char);
                     }
                 }
