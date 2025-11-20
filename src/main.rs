@@ -55,15 +55,14 @@ fn parse_args(
                             args.next();
                         }
                         Some(other) => {
-                            buf.push(ch);
+                            buf.push(c);
                             buf.push(other);
                             args.next();
                         }
                         None => {}
                     }
                 } else if let Some(next_char) = args.next() {
-                        buf.push(next_char);
-                    }
+                    buf.push(next_char);
                 }
             }
             '\'' => {
