@@ -75,6 +75,8 @@ fn parse_command(input: &str) -> Result<Vec<String>, CommandParsingError> {
             '"' => {
                 if !in_single {
                     in_double = !in_double;
+                } else {
+                    buf.push(c);
                 }
             }
             ch if ch.is_whitespace() && !in_single && !in_double => {
