@@ -90,20 +90,20 @@ fn parse_command(input: &str) -> Result<Vec<String>, ShellError> {
 pub fn handle_res(output: &str, args: &[String]) -> Result<(), ShellError> {
     let mut iter = args.iter().rev().take(2);
     if let (Some(dest), Some(val)) = (iter.next(), iter.next()) {
-        if val != ">" || val != "1>" {
-            println!("{}", output)
-        }
-        let file = fs::File::create(dest);
+        if val == ">" || val == "1>" {
+            let file = fs::File::create(dest);
 
-        match file {
-            Ok(mut file) => {
-                if let Err(_) = file.write_all(output.as_bytes()) {
-                    return Err(ShellError::WriteFile(file));
+            match file {
+                Ok(mut file) => {
+                    if let Err(_) = file.write_all(output.as_bytes()) {
+                        return Err(ShellError::WriteFile(file));
+                    }
+                }
+                Err(_) => {
+                    return Err(ShellError::CreateFile(dest.to_string()));
                 }
             }
-            Err(_) => {
-                return Err(ShellError::CreateFile(dest.to_string()));
-            }
+            return Ok(());
         }
     }
 

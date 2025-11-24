@@ -10,12 +10,10 @@ impl ShellCommand for Echo {
     }
 
     fn run(&self, args: &[String]) -> Result<(), ShellError> {
-        let display_string = args;
+        let display_string = args.join(" ");
 
-        for line in display_string {
-            if let Err(e) = handle_res(line, args) {
-                return Err(e);
-            }
+        if let Err(e) = handle_res(&display_string, args) {
+            return Err(e);
         }
 
         Ok(())
