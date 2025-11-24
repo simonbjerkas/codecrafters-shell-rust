@@ -3,7 +3,7 @@ name = "codecrafters-shell"
 version = "0.1.0"
 authors = ["Codecrafters <hello@codecrafters.io>"]
 edition = "2021"
-rust-version = "1.91.1"
+rust-version = "1.88.0"
 
 [dependencies]
 anyhow = "1.0.68"                                # error handling
