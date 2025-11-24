@@ -20,9 +20,8 @@ pub fn run(cmd: &str, args: &[String]) -> Result<(), super::ShellError> {
             }
         }
     }
-    eprintln!("{}: command not found", cmd);
 
-    Err(ShellError::Execution(format!("Unknown ecec error")))
+    Err(ShellError::Execution(format!("{}: command not found", cmd)))
 }
 
 pub fn is_executable(path: &path::Path) -> bool {
