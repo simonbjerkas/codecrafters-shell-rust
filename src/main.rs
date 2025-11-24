@@ -18,8 +18,8 @@ fn main() {
         let (command, args) = parser::parse(&input);
 
         if let Some(cmd) = Commands::from_cmd(&command) {
-            if let Err(_) = cmd.run(&args) {
-                eprintln!("Oh now!")
+            if let Err(e) = cmd.run(&args) {
+                eprintln!("{}", e)
             }
         }
     }
