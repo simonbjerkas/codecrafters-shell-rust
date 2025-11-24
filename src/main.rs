@@ -1,11 +1,9 @@
 mod commands;
+mod parser;
 
 use commands::enums::Commands;
 
-use std::{
-    io::{self, Write},
-    str::FromStr,
-};
+use std::io::{self, Write};
 
 fn main() {
     loop {
@@ -15,14 +13,12 @@ fn main() {
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
 
-        let command = Commands::from_str(&input).unwrap();
-        match command {
-            Commands::Exit { arg } => Commands::Exit { arg }.execute(),
-            Commands::Echo { display_string } => Commands::Echo { display_string }.execute(),
-            Commands::Type { cmd_to_evaluate } => Commands::Type { cmd_to_evaluate }.execute(),
-            Commands::Unknown { cmd, args } => Commands::Unknown { cmd, args }.execute(),
-            Commands::Pwd => Commands::Pwd.execute(),
-            Commands::Cd { directory } => Commands::Cd { directory }.execute(),
+        let (command, args) = parser::parse(&input).unwrap();
+
+        if let Some(cmd) = Commands::from_cmd(&command) {
+            if let Err(_) = cmd.run(&args) {
+                eprintln!("Oh now!")
+            }
         }
     }
 }
