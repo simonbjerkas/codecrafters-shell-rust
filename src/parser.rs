@@ -1,16 +1,44 @@
-use super::ShellError;
-use std::{fs, io::Write};
+use super::{Commands, ShellError};
 
-pub fn parse(input: &str) -> (String, Vec<String>) {
+pub struct ParsedInput {
+    pub cmd: Commands,
+    pub args: Vec<String>,
+    pub output: OutputStyle,
+}
+
+pub enum OutputStyle {
+    Print,
+    StdOut { path: String },
+}
+
+pub fn parse(input: &str) -> Option<ParsedInput> {
     let mut parts = parse_command(input).unwrap_or_default();
 
     if parts.is_empty() {
-        return (String::new(), Vec::new());
+        return None;
     }
 
-    let cmd = parts.remove(0);
+    let first_input = parts.remove(0);
 
-    (cmd, parts)
+    let cmd = Commands::from_cmd(&first_input);
+
+    for (idx, arg) in parts.iter().enumerate() {
+        if arg == ">" || arg == "1>" {
+            parts.remove(idx);
+            let path = parts.remove(idx);
+            return Some(ParsedInput {
+                cmd,
+                args: parts,
+                output: OutputStyle::StdOut { path },
+            });
+        }
+    }
+
+    Some(ParsedInput {
+        cmd,
+        args: parts,
+        output: OutputStyle::Print,
+    })
 }
 
 fn parse_command(input: &str) -> Result<Vec<String>, ShellError> {
@@ -85,29 +113,4 @@ fn parse_command(input: &str) -> Result<Vec<String>, ShellError> {
     }
 
     return Ok(tokens);
-}
-
-pub fn handle_res(output: &str, args: &[String]) -> Result<(), ShellError> {
-    let mut iter = args.iter().rev().take(2);
-    if let (Some(dest), Some(val)) = (iter.next(), iter.next()) {
-        if val == ">" || val == "1>" {
-            let file = fs::File::create(dest);
-
-            match file {
-                Ok(mut file) => {
-                    if let Err(_) = file.write_all(output.as_bytes()) {
-                        return Err(ShellError::WriteFile(file));
-                    }
-                }
-                Err(_) => {
-                    return Err(ShellError::CreateFile(dest.to_string()));
-                }
-            }
-            return Ok(());
-        }
-    }
-
-    println!("{}", output);
-
-    return Ok(());
 }

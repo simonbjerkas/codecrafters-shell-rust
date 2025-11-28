@@ -1,6 +1,9 @@
 use std::env;
 
-use crate::commands::{ShellCommand, ShellError};
+use crate::{
+    commands::{ShellCommand, ShellError},
+    parser::ParsedInput,
+};
 
 pub struct Cd;
 
@@ -9,15 +12,15 @@ impl ShellCommand for Cd {
         "cd"
     }
 
-    fn run(&self, args: &[String]) -> Result<(), ShellError> {
-        if args.len() > 1 {
+    fn run(&self, input: &ParsedInput) -> Result<Option<String>, ShellError> {
+        if input.args.len() > 1 {
             return Err(ShellError::Execution(format!(
                 "{}: too many arguments",
                 self.name()
             )));
         }
 
-        let directory = args.first();
+        let directory = input.args.first();
 
         match directory {
             Some(dir) => {
@@ -45,6 +48,6 @@ impl ShellCommand for Cd {
                 .expect("Could not find home directory"),
         }
 
-        Ok(())
+        Ok(None)
     }
 }

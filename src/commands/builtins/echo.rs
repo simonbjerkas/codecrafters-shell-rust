@@ -1,4 +1,4 @@
-use crate::parser::handle_res;
+use crate::parser::ParsedInput;
 
 use super::{ShellCommand, ShellError};
 
@@ -9,13 +9,8 @@ impl ShellCommand for Echo {
         "echo"
     }
 
-    fn run(&self, args: &[String]) -> Result<(), ShellError> {
-        let display_string = args.join(" ");
-
-        if let Err(e) = handle_res(&display_string, args) {
-            return Err(e);
-        }
-
-        Ok(())
+    fn run(&self, input: &ParsedInput) -> Result<Option<String>, ShellError> {
+        let display_string = input.args.join(" ");
+        Ok(Some(display_string))
     }
 }

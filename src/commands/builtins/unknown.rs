@@ -1,41 +1,82 @@
-use std::{env, fs, os::unix::fs::MetadataExt, path, process};
+use std::{env, io::Read, path, process};
 
-use crate::error::ShellError;
+use super::is_executable;
+use crate::{
+    commands::ShellCommand,
+    error::ShellError,
+    parser::{OutputStyle, ParsedInput},
+};
 
-pub fn run(cmd: &str, args: &[String]) -> Result<(), super::ShellError> {
-    let key = "PATH";
-    if let Some(paths) = env::var_os(key) {
-        for path in env::split_paths(&paths) {
-            let cmd_path = path.join(&cmd);
-            if path::Path::new(&cmd_path).exists() & is_executable(&cmd_path) {
-                let mut program = process::Command::new(&cmd);
-
-                let mut process = program
-                    .args(args)
-                    .spawn()
-                    .expect("Failed to execute command");
-
-                let _status = process.wait().expect("Something went wrong");
-                return Ok(());
-            }
-        }
-    }
-
-    Err(ShellError::Execution(format!("{}: command not found", cmd)))
+pub struct Unknown {
+    cmd: String,
 }
 
-pub fn is_executable(path: &path::Path) -> bool {
-    fs::metadata(path)
-        .map(|metadata| {
-            let mode = metadata.mode();
-            let owner_executable = (mode & 0o100) != 0;
-            let group_executable = (mode & 0o010) != 0;
-            let others_executable = (mode & 0o001) != 0;
-            if owner_executable || group_executable || others_executable {
-                true
-            } else {
-                false
+impl Unknown {
+    pub fn new(cmd: String) -> Self {
+        Self { cmd }
+    }
+}
+
+impl ShellCommand for Unknown {
+    fn name(&self) -> &str {
+        &self.cmd
+    }
+
+    fn description(&self) -> String {
+        let key = "PATH";
+        if let Some(paths) = env::var_os(key) {
+            for path in env::split_paths(&paths) {
+                let cmd_path = path.join(self.name());
+                if path::Path::new(&cmd_path).exists() & is_executable(&cmd_path) {
+                    return format!("{} is {}", self.name(), cmd_path.display());
+                }
             }
-        })
-        .unwrap_or(false)
+        }
+
+        format!("{}: not found", self.name())
+    }
+
+    fn run(&self, input: &ParsedInput) -> Result<Option<String>, super::ShellError> {
+        let key = "PATH";
+        if let Some(paths) = env::var_os(key) {
+            for path in env::split_paths(&paths) {
+                let cmd_path = path.join(&self.name());
+                if path::Path::new(&cmd_path).exists() & is_executable(&cmd_path) {
+                    let mut program = process::Command::new(self.name());
+                    match input.output {
+                        OutputStyle::Print => {
+                            let mut child = program
+                                .args(input.args.clone())
+                                .spawn()
+                                .map_err(|e| ShellError::Execution(e.to_string()))?;
+                            let _status = child.wait();
+                            return Ok(None);
+                        }
+                        OutputStyle::StdOut { .. } => {
+                            let mut child = program
+                                .args(input.args.clone())
+                                .stdout(process::Stdio::piped())
+                                .spawn()
+                                .map_err(|e| ShellError::Execution(e.to_string()))?;
+                            let _status = child.wait();
+
+                            if let Some(mut stdout) = child.stdout.take() {
+                                let mut output = String::new();
+                                stdout
+                                    .read_to_string(&mut output)
+                                    .map_err(|e| ShellError::Execution(e.to_string()))?;
+                                return Ok(Some(output));
+                            }
+                            return Ok(None);
+                        }
+                    }
+                }
+            }
+        }
+
+        Err(ShellError::Execution(format!(
+            "{}: command not found",
+            self.name()
+        )))
+    }
 }

@@ -1,9 +1,8 @@
 use crate::{
     commands::{ShellCommand, ShellError},
+    parser::ParsedInput,
     Commands,
 };
-
-use super::handle_res;
 
 pub struct Describe;
 
@@ -12,19 +11,11 @@ impl ShellCommand for Describe {
         "type"
     }
 
-    fn run(&self, args: &[String]) -> Result<(), ShellError> {
-        if let Some(cmd_to_evaluate) = args.first() {
-            if let Some(evaluated_cmd) = Commands::from_cmd(cmd_to_evaluate) {
-                if let Err(e) = handle_res(&evaluated_cmd.type_description(), args) {
-                    return Err(e);
-                }
-                return Ok(());
-            }
-            return Err(ShellError::Execution(format!(
-                "{} not found",
-                cmd_to_evaluate
-            )));
+    fn run(&self, input: &ParsedInput) -> Result<Option<String>, ShellError> {
+        if let Some(cmd_to_evaluate) = input.args.first() {
+            let evaluated_cmd = Commands::from_cmd(cmd_to_evaluate);
+            return Ok(Some(evaluated_cmd.type_description()));
         }
-        Ok(())
+        Ok(None)
     }
 }

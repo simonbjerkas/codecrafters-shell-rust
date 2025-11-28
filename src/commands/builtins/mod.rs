@@ -10,5 +10,6 @@ pub use describe::Describe;
 pub use echo::Echo;
 pub use exit::Exit;
 pub use pwd::Pwd;
+pub use unknown::Unknown;
 
-use super::{handle_res, ShellCommand, ShellError};
+use super::{is_executable, ShellCommand, ShellError};
