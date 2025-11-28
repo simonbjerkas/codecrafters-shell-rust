@@ -29,6 +29,8 @@ fn main() {
                         Ok(content) => {
                             if let Some(content) = content {
                                 println!("{}", content)
+                            } else {
+                                println!("")
                             }
                         }
                         Err(e) => eprintln!("{}", e),
