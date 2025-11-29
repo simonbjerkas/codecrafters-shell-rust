@@ -33,13 +33,13 @@ fn main() {
                 OutputStyle::StdOut { path } => match output {
                     Ok(content) => {
                         if let Some(content) = content {
-                            if let Err(e) = write_file(&path, content) {
+                            if let Err(e) = write_file(&path, &content) {
                                 eprintln!("{e}")
                             }
                         }
                     }
                     Err(e) => {
-                        if let Err(e) = write_file(&path, e.to_string()) {
+                        if let Err(e) = write_file(&path, &e.to_string()) {
                             eprintln!("{e}")
                         }
                     }
