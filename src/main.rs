@@ -43,7 +43,10 @@ fn main() {
                 OutputStyle::StdErr { path } => match output {
                     Ok(content) => {
                         if let Some(content) = content {
-                            println!("{}", content)
+                            println!("{}", content);
+                        }
+                        if let Err(e) = write_file(&path, "") {
+                            eprintln!("{}", e)
                         }
                     }
                     Err(e) => {
