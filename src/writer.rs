@@ -1,9 +1,6 @@
 use super::ShellError;
 
-use std::{
-    fs::{File, OpenOptions},
-    io::Write,
-};
+use std::{fs::File, io::Write};
 
 pub fn write_file(path: &str, content: &str, append: &bool) -> Result<(), ShellError> {
     let content = format!("{}\n", content.trim());
@@ -16,12 +13,15 @@ pub fn write_file(path: &str, content: &str, append: &bool) -> Result<(), ShellE
 }
 
 pub fn create_file(path: &str, append: &bool) -> Result<File, ShellError> {
-    let file = OpenOptions::new()
-        .create(true)
-        .write(true)
-        .append(*append)
-        .open(path)
-        .map_err(|_| ShellError::CreateFile(path.to_string()))?;
+    let file = match append {
+        true => File::options()
+            .create(true)
+            .append(*append)
+            .open(path)
+            .map_err(|_| ShellError::CreateFile(path.to_string()))?,
+
+        false => File::create(path).map_err(|_| ShellError::CreateFile(path.to_string()))?,
+    };
 
     Ok(file)
 }
