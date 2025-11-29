@@ -82,7 +82,7 @@ impl ShellCommand for Unknown {
                                 stderr
                                     .read_to_string(&mut error)
                                     .map_err(|e| ShellError::Execution(e.to_string()))?;
-                                return Ok(Some(error));
+                                return Err(ShellError::Execution(error));
                             }
                             return Ok(None);
                         }
