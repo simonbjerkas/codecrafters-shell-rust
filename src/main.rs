@@ -28,13 +28,18 @@ fn main() {
                     Err(e) => eprintln!("{}", e),
                 },
                 parser::OutputStyle::StdOut { path, append } => match output {
-                    Ok(content) => {
-                        if let Some(content) = content {
+                    Ok(content) => match content {
+                        Some(content) => {
                             if let Err(e) = writer::write_file(&path, &content, &append) {
                                 eprintln!("{e}")
                             }
                         }
-                    }
+                        None => {
+                            if let Err(e) = writer::create_file(&path, &append) {
+                                eprintln!("{}", e)
+                            }
+                        }
+                    },
                     Err(e) => eprintln!("{}", e),
                 },
                 parser::OutputStyle::StdErr { path, append } => match output {

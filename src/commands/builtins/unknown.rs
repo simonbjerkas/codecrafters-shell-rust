@@ -65,6 +65,10 @@ impl ShellCommand for Unknown {
                                 stdout
                                     .read_to_string(&mut output)
                                     .map_err(|e| ShellError::Execution(e.to_string()))?;
+
+                                if output.is_empty() {
+                                    return Ok(None);
+                                }
                                 return Ok(Some(output));
                             }
                             return Ok(None);
