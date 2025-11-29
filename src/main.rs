@@ -27,17 +27,17 @@ fn main() {
                     }
                     Err(e) => eprintln!("{}", e),
                 },
-                parser::OutputStyle::StdOut { path } => match output {
+                parser::OutputStyle::StdOut { path, append } => match output {
                     Ok(content) => {
                         if let Some(content) = content {
-                            if let Err(e) = writer::write_file(&path, &content) {
+                            if let Err(e) = writer::write_file(&path, &content, &append) {
                                 eprintln!("{e}")
                             }
                         }
                     }
                     Err(e) => eprintln!("{}", e),
                 },
-                parser::OutputStyle::StdErr { path } => match output {
+                parser::OutputStyle::StdErr { path, append } => match output {
                     Ok(content) => {
                         if let Some(content) = content {
                             println!("{}", content);
@@ -47,7 +47,7 @@ fn main() {
                         }
                     }
                     Err(e) => {
-                        if let Err(e) = writer::write_file(&path, &e.to_string()) {
+                        if let Err(e) = writer::write_file(&path, &e.to_string(), &append) {
                             eprintln!("{}", e)
                         }
                     }

@@ -8,8 +8,8 @@ pub struct ParsedInput {
 
 pub enum OutputStyle {
     Print,
-    StdOut { path: String },
-    StdErr { path: String },
+    StdOut { path: String, append: bool },
+    StdErr { path: String, append: bool },
 }
 
 pub fn parse(input: &str) -> Option<ParsedInput> {
@@ -30,7 +30,10 @@ pub fn parse(input: &str) -> Option<ParsedInput> {
             return Some(ParsedInput {
                 cmd,
                 args: parts,
-                output: OutputStyle::StdOut { path },
+                output: OutputStyle::StdOut {
+                    path,
+                    append: false,
+                },
             });
         } else if arg == "2>" {
             parts.remove(idx);
@@ -38,7 +41,26 @@ pub fn parse(input: &str) -> Option<ParsedInput> {
             return Some(ParsedInput {
                 cmd,
                 args: parts,
-                output: OutputStyle::StdErr { path },
+                output: OutputStyle::StdErr {
+                    path,
+                    append: false,
+                },
+            });
+        } else if arg == ">>" || arg == "1>>" {
+            parts.remove(idx);
+            let path = parts.remove(idx);
+            return Some(ParsedInput {
+                cmd,
+                args: parts,
+                output: OutputStyle::StdOut { path, append: true },
+            });
+        } else if arg == "2>>" {
+            parts.remove(idx);
+            let path = parts.remove(idx);
+            return Some(ParsedInput {
+                cmd,
+                args: parts,
+                output: OutputStyle::StdErr { path, append: true },
             });
         }
     }
