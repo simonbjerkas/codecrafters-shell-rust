@@ -18,6 +18,7 @@ pub fn write_file(path: &str, content: &str, append: &bool) -> Result<(), ShellE
 pub fn create_file(path: &str, append: &bool) -> Result<File, ShellError> {
     let file = OpenOptions::new()
         .create(true)
+        .write(true)
         .append(*append)
         .open(path)
         .map_err(|_| ShellError::CreateFile(path.to_string()))?;
