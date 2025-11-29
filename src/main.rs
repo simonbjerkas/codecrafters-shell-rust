@@ -43,7 +43,6 @@ fn main() {
                 OutputStyle::StdErr { path } => match output {
                     Ok(content) => {
                         if let Some(content) = content {
-                            println!("we are here");
                             println!("{}", content)
                         }
                     }
