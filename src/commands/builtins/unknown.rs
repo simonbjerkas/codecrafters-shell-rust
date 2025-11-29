@@ -50,6 +50,7 @@ impl ShellCommand for Unknown {
                                 .spawn()
                                 .map_err(|e| ShellError::Execution(e.to_string()))?;
                             let _status = child.wait();
+                            println!("");
                             return Ok(None);
                         }
                         OutputStyle::StdOut { .. } => {

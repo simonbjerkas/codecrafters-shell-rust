@@ -10,7 +10,7 @@ impl ShellCommand for Echo {
     }
 
     fn run(&self, input: &ParsedInput) -> Result<Option<String>, ShellError> {
-        let display_string = input.args.join(" ");
+        let display_string = format!("{}", input.args.join(" "));
         Ok(Some(display_string))
     }
 }
