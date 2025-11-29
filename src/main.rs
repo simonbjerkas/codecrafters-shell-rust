@@ -42,7 +42,7 @@ fn main() {
                         if let Some(content) = content {
                             println!("{}", content);
                         }
-                        if let Err(e) = writer::create_file(&path) {
+                        if let Err(e) = writer::create_file(&path, &append) {
                             eprintln!("{}", e)
                         }
                     }

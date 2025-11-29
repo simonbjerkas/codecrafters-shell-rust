@@ -8,6 +8,4 @@ pub enum ShellError {
     WriteFile(std::fs::File),
     #[error("{0}: Failed to create file")]
     CreateFile(String),
-    #[error("{0}: Failed to open file")]
-    OpenFile(String),
 }
