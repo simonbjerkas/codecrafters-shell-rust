@@ -69,6 +69,23 @@ impl ShellCommand for Unknown {
                             }
                             return Ok(None);
                         }
+                        OutputStyle::StdErr { .. } => {
+                            let mut child = program
+                                .args(input.args.clone())
+                                .stderr(process::Stdio::piped())
+                                .spawn()
+                                .map_err(|e| ShellError::Execution(e.to_string()))?;
+                            let _status = child.wait();
+
+                            if let Some(mut stderr) = child.stderr.take() {
+                                let mut error = String::new();
+                                stderr
+                                    .read_to_string(&mut error)
+                                    .map_err(|e| ShellError::Execution(e.to_string()))?;
+                                return Ok(Some(error));
+                            }
+                            return Ok(None);
+                        }
                     }
                 }
             }

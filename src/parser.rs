@@ -9,6 +9,7 @@ pub struct ParsedInput {
 pub enum OutputStyle {
     Print,
     StdOut { path: String },
+    StdErr { path: String },
 }
 
 pub fn parse(input: &str) -> Option<ParsedInput> {
@@ -30,6 +31,14 @@ pub fn parse(input: &str) -> Option<ParsedInput> {
                 cmd,
                 args: parts,
                 output: OutputStyle::StdOut { path },
+            });
+        } else if arg == "2>" {
+            parts.remove(idx);
+            let path = parts.remove(idx);
+            return Some(ParsedInput {
+                cmd,
+                args: parts,
+                output: OutputStyle::StdErr { path },
             });
         }
     }
