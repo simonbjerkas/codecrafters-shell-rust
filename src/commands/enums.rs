@@ -16,6 +16,10 @@ pub enum Commands {
 }
 
 impl Commands {
+    pub fn all_commands() -> [&'static str; 5] {
+        return ["exit", "echo", "pwd", "cd", "type"];
+    }
+
     pub fn from_cmd(cmd: &str) -> Self {
         match cmd {
             "exit" => Commands::Exit(Exit),
