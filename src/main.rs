@@ -9,6 +9,8 @@ use error::ShellError;
 
 use std::io::{self, Write};
 
+use crate::rlhelper::search_executables;
+
 fn main() {
     let mut rl = rustyline::Editor::new().unwrap();
     rl.set_helper(Some(rlhelper::AutoCompleter));
@@ -20,6 +22,10 @@ fn main() {
 
         match readline {
             Ok(input) => {
+                if input == " " {
+                    search_executables("g");
+                    continue;
+                }
                 let Some(input) = parser::parse(&input) else {
                     continue;
                 };
