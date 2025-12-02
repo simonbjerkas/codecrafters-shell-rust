@@ -36,23 +36,32 @@ impl Completer for AutoCompleter {
 
         let partial = &line[pos - last_space..pos];
 
-        let cmds: Vec<String> = Commands::all_commands()
+        let mut cmds: Vec<String> = Commands::all_commands()
             .iter()
             .filter(|cmd| cmd.starts_with(partial))
             .map(|cmd| cmd.to_string())
             .collect();
 
-        if cmds.is_empty() {
-            let cmds = search_executables(partial);
-            return Ok((pos - last_space, cmds));
+        search_executables(partial, &mut cmds);
+
+        let mut cmds: Vec<String> = cmds
+            .iter()
+            .map(|cmd| cmd.trim().to_string())
+            .clone()
+            .collect();
+
+        cmds.sort();
+        cmds.dedup();
+
+        if cmds.len() == 1 {
+            return Ok((pos - last_space, vec![format!("{} ", cmds[0].clone())]));
         }
 
         Ok((pos - last_space, cmds))
     }
 }
 
-pub fn search_executables(partial: &str) -> Vec<String> {
-    let mut possibilities = Vec::new();
+pub fn search_executables(partial: &str, cmds: &mut Vec<String>) {
     let key = "PATH";
     if let Some(paths) = std::env::var_os(key) {
         for path in std::env::split_paths(&paths) {
@@ -81,11 +90,9 @@ pub fn search_executables(partial: &str) -> Vec<String> {
                     .unwrap_or(false);
 
                 if file_name.starts_with(partial) && is_executable {
-                    possibilities.push(format!("{} ", f.file_name().display()));
+                    cmds.push(format!("{} ", f.file_name().display()));
                 }
             }
         }
     }
-
-    possibilities
 }

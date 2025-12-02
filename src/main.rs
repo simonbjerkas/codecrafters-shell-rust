@@ -9,8 +9,6 @@ use error::ShellError;
 
 use std::io::{self, Write};
 
-use crate::rlhelper::search_executables;
-
 fn main() {
     let config = rustyline::Config::builder()
         .completion_type(rustyline::CompletionType::List)
@@ -26,10 +24,6 @@ fn main() {
 
         match readline {
             Ok(input) => {
-                if input == " " {
-                    search_executables("g");
-                    continue;
-                }
                 let Some(input) = parser::parse(&input) else {
                     continue;
                 };
