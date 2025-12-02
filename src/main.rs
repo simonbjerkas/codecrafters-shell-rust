@@ -12,7 +12,11 @@ use std::io::{self, Write};
 use crate::rlhelper::search_executables;
 
 fn main() {
-    let mut rl = rustyline::Editor::new().unwrap();
+    let config = rustyline::Config::builder()
+        .completion_type(rustyline::CompletionType::List)
+        .build();
+
+    let mut rl = rustyline::Editor::with_config(config).unwrap();
     rl.set_helper(Some(rlhelper::AutoCompleter));
     loop {
         print!("$ ");
