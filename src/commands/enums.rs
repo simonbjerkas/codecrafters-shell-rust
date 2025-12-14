@@ -1,7 +1,7 @@
 use crate::{
     commands::{
-        builtins::{Cd, Describe, Echo, Exit, Pwd, Unknown},
         ShellCommand, ShellError,
+        builtins::{Cd, Describe, Echo, Exit, Pwd, Unknown},
     },
     parser::ParsedInput,
 };
