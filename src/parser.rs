@@ -1,34 +1,46 @@
 use anyhow::Result;
 
 use super::lexer::{Token, TokenType};
-use codecrafters_shell::{Commands, Redirection, ShellCommand, redirection};
+use codecrafters_shell::{Commands, Redirection, ShellCommand, ShellError, redirection};
 
 pub struct ParsedInput {
     pub cmd: Box<dyn ShellCommand>,
     pub args: Vec<String>,
 }
 
-pub fn parse(tokens: Vec<Token>) -> Result<(Option<ParsedInput>, Option<Redirection>)> {
+pub fn parse(tokens: Vec<Token>) -> Result<(Option<ParsedInput>, Vec<Redirection>)> {
     let mut tokens = tokens.iter();
     let Some(cmd) = tokens.next().map(|token| {
         return Commands::new(&token.origin);
     }) else {
-        return Ok((None, None));
+        return Ok((None, Vec::new()));
     };
 
     let mut args: Vec<String> = Vec::new();
-    let mut redirection = None;
+    let mut redirection: Vec<Redirection> = Vec::new();
+    let mut current_arg = String::new();
 
     while let Some(token) = tokens.next() {
         if token.token_type == TokenType::Redirects {
-            redirection = Some(Redirection::new(
+            let Some(path_token) = tokens.next() else {
+                return Err(ShellError::MissingArg.into());
+            };
+            redirection.push(Redirection::new(
                 redirection::eval_redirect(token.origin),
-                tokens.next().unwrap().origin,
+                path_token.origin,
             ));
-            break;
         }
 
-        args.push(token.origin.to_string());
+        current_arg.push_str(token.origin);
+
+        if !token.is_adjacent {
+            args.push(current_arg);
+            current_arg = String::new();
+        }
+    }
+
+    if !current_arg.is_empty() {
+        args.push(current_arg);
     }
 
     let parsed = Some(ParsedInput { cmd, args });

@@ -11,6 +11,7 @@ pub enum TokenType {
 pub struct Token<'a> {
     pub origin: &'a str,
     pub token_type: TokenType,
+    pub is_adjacent: bool,
 }
 
 struct Lexer<'a> {
@@ -41,24 +42,30 @@ impl<'a> Iterator for Lexer<'a> {
                 Redirection,
             }
 
+            let compare_next = |c| match chars.clone().peekable().peek() {
+                Some(next_val) => c == *next_val,
+                None => false,
+            };
+
             let started = match current {
                 '"' => Started::DoubleQuote,
                 '\'' => Started::SingleQuote,
                 '\\' => Started::Escape,
-                '1' => Started::Redirection,
-                '2' => Started::Redirection,
                 '>' => Started::Redirection,
+                '1' if compare_next('>') => Started::Redirection,
+                '2' if compare_next('>') => Started::Redirection,
                 c if c.is_whitespace() => continue,
                 _ => {
                     let next_whitespace = current_str
                         .find(|c| matches!(c, '\'' | '"' | ' ' | '\n'))
                         .unwrap_or(self.rest.len());
                     let origin = &current_str[..next_whitespace + 1].trim();
-                    self.rest = &current_str[next_whitespace + 1..];
+                    self.rest = &current_str[next_whitespace..];
 
                     return Some(Ok(Token {
                         origin,
                         token_type: TokenType::Word,
+                        is_adjacent: !compare_next(' '),
                     }));
                 }
             };
@@ -74,6 +81,7 @@ impl<'a> Iterator for Lexer<'a> {
                     return Some(Ok(Token {
                         origin,
                         token_type: TokenType::Word,
+                        is_adjacent: !compare_next(' '),
                     }));
                 }
                 Started::SingleQuote => {
@@ -86,6 +94,7 @@ impl<'a> Iterator for Lexer<'a> {
                     return Some(Ok(Token {
                         origin,
                         token_type: TokenType::Word,
+                        is_adjacent: !compare_next(' '),
                     }));
                 }
                 Started::Escape => {
@@ -106,6 +115,7 @@ impl<'a> Iterator for Lexer<'a> {
                     return Some(Ok(Token {
                         origin,
                         token_type: TokenType::Redirects,
+                        is_adjacent: !compare_next(' '),
                     }));
                 }
             }

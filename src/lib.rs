@@ -12,6 +12,8 @@ pub use error::ShellError;
 use external::External;
 pub use redirection::Redirection;
 
+use crate::redirection::Redirect;
+
 pub struct Commands;
 
 impl Commands {
@@ -58,11 +60,11 @@ fn is_executable(path: &std::path::Path) -> bool {
 pub fn run_cmd(
     cmd: Box<dyn ShellCommand>,
     args: Vec<String>,
-    redirect: Option<Redirection>,
+    redirects: Vec<Redirection>,
 ) -> Result<()> {
     let result = cmd.execute(args);
 
-    let Some(redirect) = redirect else {
+    if redirects.is_empty() {
         match result {
             Ok(res) => {
                 if let Some(res) = res {
@@ -74,24 +76,40 @@ pub fn run_cmd(
         return Ok(());
     };
 
-    let Redirection { redirect, path } = redirect;
+    let redirect_out = redirects
+        .iter()
+        .any(|r| matches!(r.redirect, Redirect::StdOut(_)));
+    let redirect_err = redirects
+        .iter()
+        .any(|r| matches!(r.redirect, Redirect::StdErr(_)));
 
-    match redirect {
-        redirection::Redirect::StdErr(append) => match result {
-            Ok(res) => {
-                if let Some(res) = res {
-                    println!("{res}");
+    for redirect in redirects {
+        let Redirection { redirect, path } = redirect;
+
+        match redirect {
+            redirection::Redirect::StdErr(append) => match &result {
+                Ok(res) => {
+                    if let Some(res) = res
+                        && !redirect_out
+                    {
+                        println!("{res}");
+                    }
                 }
-            }
-            Err(e) => writer::write_file(path, e.to_string().as_str(), &append)?,
-        },
-        redirection::Redirect::StdOut(append) => match result {
-            Ok(res) => writer::write_file(path, &res.unwrap_or(String::new()), &append)?,
-            Err(e) => {
-                eprintln!("{e}");
-            }
-        },
+                Err(e) => writer::write_file(path, e.to_string().as_str(), &append)?,
+            },
+            redirection::Redirect::StdOut(append) => match &result {
+                Ok(res) => writer::write_file(
+                    path,
+                    res.clone().unwrap_or(String::new()).as_str(),
+                    &append,
+                )?,
+                Err(e) => {
+                    if !redirect_err {
+                        eprintln!("{e}");
+                    }
+                }
+            },
+        }
     }
-
     Ok(())
 }

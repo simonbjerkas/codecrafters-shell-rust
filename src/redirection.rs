@@ -4,7 +4,7 @@ pub enum Redirect {
     StdErr(bool),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Redirection<'a> {
     pub redirect: Redirect,
     pub path: &'a str,
