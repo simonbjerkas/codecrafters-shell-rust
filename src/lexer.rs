@@ -62,10 +62,15 @@ impl<'a> Iterator for Lexer<'a> {
                     let origin = &current_str[..next_whitespace + 1].trim();
                     self.rest = &current_str[next_whitespace..];
 
+                    let is_adjacent = match self.rest.chars().peekable().peek() {
+                        Some(c) if !c.is_whitespace() => true,
+                        _ => false,
+                    };
+
                     return Some(Ok(Token {
                         origin,
                         token_type: TokenType::Word,
-                        is_adjacent: !compare_next(' '),
+                        is_adjacent,
                     }));
                 }
             };
@@ -78,10 +83,15 @@ impl<'a> Iterator for Lexer<'a> {
                     let origin = &current_str[1..end + 1];
                     self.rest = &self.rest[end + 1..];
 
+                    let is_adjacent = match self.rest.chars().peekable().peek() {
+                        Some(c) if !c.is_whitespace() => true,
+                        _ => false,
+                    };
+
                     return Some(Ok(Token {
                         origin,
                         token_type: TokenType::Word,
-                        is_adjacent: !compare_next(' '),
+                        is_adjacent,
                     }));
                 }
                 Started::SingleQuote => {
@@ -91,10 +101,15 @@ impl<'a> Iterator for Lexer<'a> {
                     let origin = &current_str[1..end + 1];
                     self.rest = &self.rest[end + 1..];
 
+                    let is_adjacent = match self.rest.chars().peekable().peek() {
+                        Some(c) if !c.is_whitespace() => true,
+                        _ => false,
+                    };
+
                     return Some(Ok(Token {
                         origin,
                         token_type: TokenType::Word,
-                        is_adjacent: !compare_next(' '),
+                        is_adjacent,
                     }));
                 }
                 Started::Escape => {
@@ -112,10 +127,15 @@ impl<'a> Iterator for Lexer<'a> {
                     }
                     self.rest = &self.rest[next_whitespace + 1..];
 
+                    let is_adjacent = match self.rest.chars().peekable().peek() {
+                        Some(c) if !c.is_whitespace() => true,
+                        _ => false,
+                    };
+
                     return Some(Ok(Token {
                         origin,
                         token_type: TokenType::Redirects,
-                        is_adjacent: !compare_next(' '),
+                        is_adjacent,
                     }));
                 }
             }
