@@ -1,9 +1,7 @@
+use anyhow::Result;
 use std::env;
 
-use crate::{
-    commands::{ShellCommand, ShellError},
-    parser::ParsedInput,
-};
+use super::{ShellCommand, ShellError};
 
 pub struct Cd;
 
@@ -12,15 +10,14 @@ impl ShellCommand for Cd {
         "cd"
     }
 
-    fn run(&self, input: &ParsedInput) -> Result<Option<String>, ShellError> {
-        if input.args.len() > 1 {
-            return Err(ShellError::Execution(format!(
-                "{}: too many arguments",
-                self.name()
-            )));
+    fn execute(&self, args: Vec<String>) -> Result<Option<String>> {
+        if args.len() > 1 {
+            return Err(
+                ShellError::Execution(format!("{}: too many arguments", self.name())).into(),
+            );
         }
 
-        let directory = input.args.first();
+        let directory = args.first();
 
         match directory {
             Some(dir) => {
@@ -32,7 +29,8 @@ impl ShellCommand for Cd {
                             return Err(ShellError::Execution(format!(
                                 "cd: {}; No such file or directory",
                                 dir
-                            )));
+                            ))
+                            .into());
                         }
                     }
                 } else {
@@ -40,7 +38,8 @@ impl ShellCommand for Cd {
                         return Err(ShellError::Execution(format!(
                             "cd: {}: No such file or directory",
                             dir
-                        )));
+                        ))
+                        .into());
                     }
                 }
             }

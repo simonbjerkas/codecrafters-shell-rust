@@ -11,5 +11,9 @@ pub enum ShellError {
     #[error("Missing endquote")]
     MissingQuote,
     #[error("End of line error")]
-    EOL,
+    Eol,
+    #[error("Missing argument")]
+    MissingArg,
+    #[error("Failed to parse command")]
+    Parsing,
 }

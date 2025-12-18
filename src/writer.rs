@@ -1,8 +1,9 @@
 use super::ShellError;
+use anyhow::Result;
 
 use std::{fs::File, io::Write};
 
-pub fn write_file(path: &str, content: &str, append: &bool) -> Result<(), ShellError> {
+pub fn write_file(path: &str, content: &str, append: &bool) -> Result<()> {
     let content = format!("{}\n", content.trim());
     let mut file = create_file(path, append)?;
 

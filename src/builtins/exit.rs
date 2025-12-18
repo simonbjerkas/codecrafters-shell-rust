@@ -1,9 +1,7 @@
+use anyhow::Result;
 use std::process;
 
-use crate::{
-    commands::{ShellCommand, ShellError},
-    parser::ParsedInput,
-};
+use super::ShellCommand;
 
 pub struct Exit;
 
@@ -12,8 +10,8 @@ impl ShellCommand for Exit {
         "exit"
     }
 
-    fn run(&self, input: &ParsedInput) -> Result<Option<String>, ShellError> {
-        let code = input.args.iter().next();
+    fn execute(&self, args: Vec<String>) -> Result<Option<String>> {
+        let code = args.iter().next();
 
         match code {
             Some(status) => {
