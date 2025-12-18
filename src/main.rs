@@ -16,13 +16,9 @@ fn main() {
             continue;
         };
 
-        println!("{tokens:?}");
-
         let Some((parsed, redirection)) = handle_result(parser::parse(tokens)) else {
             continue;
         };
-
-        println!("********* {redirection:?}");
 
         if let Some(parsed) = parsed {
             if let Err(e) = codecrafters_shell::run_cmd(parsed.cmd, parsed.args, redirection) {

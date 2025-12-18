@@ -29,9 +29,7 @@ impl<'a> Iterator for Lexer<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             let mut chars = self.rest.chars();
-            let Some(current) = chars.next() else {
-                return Some(Err(ShellError::Eol.into()));
-            };
+            let current = chars.next()?;
             let current_str = self.rest;
 
             self.rest = chars.as_str();
@@ -56,10 +54,11 @@ impl<'a> Iterator for Lexer<'a> {
                         .find(char::is_whitespace)
                         .unwrap_or(self.rest.len());
 
-                    self.rest = &current_str[next_whitespace..];
+                    let origin = &current_str[..next_whitespace + 1].trim();
+                    self.rest = &current_str[next_whitespace + 1..];
 
                     return Some(Ok(Token {
-                        origin: &self.rest[..next_whitespace + 1],
+                        origin,
                         token_type: TokenType::Word,
                     }));
                 }
@@ -70,7 +69,7 @@ impl<'a> Iterator for Lexer<'a> {
                     let Some(end) = current_str.find('"') else {
                         return Some(Err(ShellError::MissingQuote.into()));
                     };
-                    let origin = &current_str[..end + 1];
+                    let origin = &current_str[..end + 1].trim();
                     self.rest = &self.rest[end..];
 
                     return Some(Ok(Token {
@@ -82,7 +81,7 @@ impl<'a> Iterator for Lexer<'a> {
                     let Some(end) = current_str.find('\'') else {
                         return Some(Err(ShellError::MissingQuote.into()));
                     };
-                    let origin = &current_str[..end + 1];
+                    let origin = &current_str[..end + 1].trim();
                     self.rest = &self.rest[end..];
 
                     return Some(Ok(Token {
@@ -99,7 +98,7 @@ impl<'a> Iterator for Lexer<'a> {
                     let Some(next_whitespace) = current_str.find(char::is_whitespace) else {
                         return Some(Err(ShellError::MissingArg.into()));
                     };
-                    let origin = &current_str[..next_whitespace + 1];
+                    let origin = current_str[..next_whitespace + 1].trim();
                     if !matches!(origin, "1>" | "1>>" | ">" | ">>" | "2>" | "2>>") {
                         return Some(Err(ShellError::Parsing.into()));
                     }
