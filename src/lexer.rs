@@ -36,14 +36,14 @@ impl<'a> Iterator for Lexer<'a> {
 
             enum Started {
                 DoubleQuote,
-                SingleQuoute,
+                SingleQuote,
                 Escape,
                 Redirection,
             }
 
             let started = match current {
                 '"' => Started::DoubleQuote,
-                '\'' => Started::SingleQuoute,
+                '\'' => Started::SingleQuote,
                 '\\' => Started::Escape,
                 '1' => Started::Redirection,
                 '2' => Started::Redirection,
@@ -51,9 +51,8 @@ impl<'a> Iterator for Lexer<'a> {
                 c if c.is_whitespace() => continue,
                 _ => {
                     let next_whitespace = current_str
-                        .find(char::is_whitespace)
+                        .find(|c| matches!(c, '\'' | '"' | ' ' | '\n'))
                         .unwrap_or(self.rest.len());
-
                     let origin = &current_str[..next_whitespace + 1].trim();
                     self.rest = &current_str[next_whitespace + 1..];
 
@@ -66,23 +65,23 @@ impl<'a> Iterator for Lexer<'a> {
 
             match started {
                 Started::DoubleQuote => {
-                    let Some(end) = current_str.find('"') else {
+                    let Some(end) = self.rest.find('"') else {
                         return Some(Err(ShellError::MissingQuote.into()));
                     };
-                    let origin = &current_str[..end + 1].trim();
-                    self.rest = &self.rest[end..];
+                    let origin = &current_str[1..end + 1];
+                    self.rest = &self.rest[end + 1..];
 
                     return Some(Ok(Token {
                         origin,
                         token_type: TokenType::Word,
                     }));
                 }
-                Started::SingleQuoute => {
-                    let Some(end) = current_str.find('\'') else {
+                Started::SingleQuote => {
+                    let Some(end) = self.rest.find('\'') else {
                         return Some(Err(ShellError::MissingQuote.into()));
                     };
-                    let origin = &current_str[..end + 1].trim();
-                    self.rest = &self.rest[end..];
+                    let origin = &current_str[1..end + 1];
+                    self.rest = &self.rest[end + 1..];
 
                     return Some(Ok(Token {
                         origin,
@@ -102,6 +101,8 @@ impl<'a> Iterator for Lexer<'a> {
                     if !matches!(origin, "1>" | "1>>" | ">" | ">>" | "2>" | "2>>") {
                         return Some(Err(ShellError::Parsing.into()));
                     }
+                    self.rest = &self.rest[next_whitespace + 1..];
+
                     return Some(Ok(Token {
                         origin,
                         token_type: TokenType::Redirects,

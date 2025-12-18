@@ -65,8 +65,9 @@ pub fn run_cmd(
     let Some(redirect) = redirect else {
         match result {
             Ok(res) => {
-                let res = res.unwrap_or_default();
-                println!("{res}");
+                if let Some(res) = res {
+                    println!("{res}");
+                }
             }
             Err(e) => eprintln!("{e}"),
         }
@@ -78,8 +79,9 @@ pub fn run_cmd(
     match redirect {
         redirection::Redirect::StdErr(append) => match result {
             Ok(res) => {
-                let res = res.unwrap_or_default();
-                println!("{res}");
+                if let Some(res) = res {
+                    println!("{res}");
+                }
             }
             Err(e) => writer::write_file(path, e.to_string().as_str(), &append)?,
         },
