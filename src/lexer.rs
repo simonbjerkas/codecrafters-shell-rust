@@ -5,6 +5,7 @@ use codecrafters_shell::ShellError;
 pub enum TokenType {
     Word,
     Redirects,
+    Escaped,
 }
 
 #[derive(Clone, Debug)]
@@ -56,11 +57,12 @@ impl<'a> Iterator for Lexer<'a> {
                 '2' if compare_next('>') => Started::Redirection,
                 c if c.is_whitespace() => continue,
                 _ => {
-                    let next_whitespace = current_str
-                        .find(|c| matches!(c, '\'' | '"' | ' ' | '\n'))
-                        .unwrap_or(self.rest.len());
-                    let origin = &current_str[..next_whitespace + 1].trim();
-                    self.rest = &current_str[next_whitespace..];
+                    let end_index = current_str
+                        .find(|c| matches!(c, '\'' | '"' | ' ' | '\n' | '\\'))
+                        .unwrap_or(current_str.len());
+
+                    let origin = &current_str[..end_index];
+                    self.rest = &current_str[end_index..];
 
                     let is_adjacent = match self.rest.chars().peekable().peek() {
                         Some(c) if !c.is_whitespace() => true,
@@ -80,7 +82,7 @@ impl<'a> Iterator for Lexer<'a> {
                     let Some(end) = self.rest.find('"') else {
                         return Some(Err(ShellError::MissingQuote.into()));
                     };
-                    let origin = &current_str[1..end + 1];
+                    let origin = &self.rest[..end];
                     self.rest = &self.rest[end + 1..];
 
                     let is_adjacent = match self.rest.chars().peekable().peek() {
@@ -98,7 +100,7 @@ impl<'a> Iterator for Lexer<'a> {
                     let Some(end) = self.rest.find('\'') else {
                         return Some(Err(ShellError::MissingQuote.into()));
                     };
-                    let origin = &current_str[1..end + 1];
+                    let origin = &self.rest[..end];
                     self.rest = &self.rest[end + 1..];
 
                     let is_adjacent = match self.rest.chars().peekable().peek() {
@@ -113,9 +115,19 @@ impl<'a> Iterator for Lexer<'a> {
                     }));
                 }
                 Started::Escape => {
-                    chars.next().unwrap_or_default();
-                    self.rest = chars.as_str();
-                    continue;
+                    let escaped = &self.rest[..1];
+                    self.rest = &self.rest[1..];
+
+                    let is_adjacent = match self.rest.chars().peekable().peek() {
+                        Some(c) if !c.is_whitespace() => true,
+                        _ => false,
+                    };
+
+                    return Some(Ok(Token {
+                        origin: escaped,
+                        token_type: TokenType::Escaped,
+                        is_adjacent,
+                    }));
                 }
                 Started::Redirection => {
                     let Some(next_whitespace) = current_str.find(char::is_whitespace) else {
