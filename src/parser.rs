@@ -29,9 +29,14 @@ pub fn parse(tokens: Vec<Token>) -> Result<(Option<ParsedInput>, Vec<Redirection
                 redirection::eval_redirect(token.origin),
                 path_token.origin,
             ));
+            continue;
         }
 
-        current_arg.push_str(token.origin);
+        let origin = match token.token_type {
+            TokenType::DoubleQuote => &process_escaped(token.origin),
+            _ => token.origin,
+        };
+        current_arg.push_str(origin);
 
         if !token.is_adjacent {
             args.push(current_arg);
@@ -46,4 +51,29 @@ pub fn parse(tokens: Vec<Token>) -> Result<(Option<ParsedInput>, Vec<Redirection
     let parsed = Some(ParsedInput { cmd, args });
 
     Ok((parsed, redirection))
+}
+
+fn process_escaped(input: &str) -> String {
+    let mut chars = input.chars();
+    let mut result = String::new();
+
+    while let Some(c) = chars.next() {
+        if c != '\\' {
+            result.push(c);
+            continue;
+        }
+
+        match chars.next() {
+            Some(next) if matches!(next, '\\' | '"' | '$' | '`' | '\n') => {
+                result.push(next);
+            }
+            Some(next) => {
+                result.push(c);
+                result.push(next);
+            }
+            None => result.push(c),
+        }
+    }
+
+    result
 }

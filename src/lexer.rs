@@ -4,6 +4,7 @@ use codecrafters_shell::ShellError;
 #[derive(PartialEq, Clone, Debug)]
 pub enum TokenType {
     Word,
+    DoubleQuote,
     Redirects,
     Escaped,
 }
@@ -79,8 +80,9 @@ impl<'a> Iterator for Lexer<'a> {
 
             match started {
                 Started::DoubleQuote => {
-                    let Some(end) = self.rest.find('"') else {
-                        return Some(Err(ShellError::MissingQuote.into()));
+                    let end = match handle_double(chars) {
+                        Ok(end) => end,
+                        Err(e) => return Some(Err(e)),
                     };
                     let origin = &self.rest[..end];
                     self.rest = &self.rest[end + 1..];
@@ -92,7 +94,7 @@ impl<'a> Iterator for Lexer<'a> {
 
                     return Some(Ok(Token {
                         origin,
-                        token_type: TokenType::Word,
+                        token_type: TokenType::DoubleQuote,
                         is_adjacent,
                     }));
                 }
@@ -130,24 +132,19 @@ impl<'a> Iterator for Lexer<'a> {
                     }));
                 }
                 Started::Redirection => {
-                    let Some(next_whitespace) = current_str.find(char::is_whitespace) else {
+                    let Some(end) = self.rest.find(|c| !matches!(c, '>')) else {
                         return Some(Err(ShellError::MissingArg.into()));
                     };
-                    let origin = current_str[..next_whitespace + 1].trim();
+                    let origin = current_str[..end + 1].trim();
                     if !matches!(origin, "1>" | "1>>" | ">" | ">>" | "2>" | "2>>") {
                         return Some(Err(ShellError::Parsing.into()));
                     }
-                    self.rest = &self.rest[next_whitespace + 1..];
-
-                    let is_adjacent = match self.rest.chars().peekable().peek() {
-                        Some(c) if !c.is_whitespace() => true,
-                        _ => false,
-                    };
+                    self.rest = &self.rest[end + 1..];
 
                     return Some(Ok(Token {
                         origin,
                         token_type: TokenType::Redirects,
-                        is_adjacent,
+                        is_adjacent: false,
                     }));
                 }
             }
@@ -165,4 +162,22 @@ pub fn run_lexer(input: &str) -> Result<Vec<Token<'_>>> {
     }
 
     Ok(tokens)
+}
+
+fn handle_double<T>(chars: T) -> Result<usize>
+where
+    T: Iterator<Item = char>,
+{
+    let mut escaped = false;
+    for (idx, c) in chars.enumerate() {
+        if escaped {
+            escaped = false;
+        } else if c == '\\' {
+            escaped = true;
+        } else if c == '"' {
+            return Ok(idx);
+        }
+    }
+
+    Err(ShellError::MissingQuote.into())
 }
