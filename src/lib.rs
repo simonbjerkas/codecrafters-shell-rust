@@ -70,28 +70,34 @@ pub fn run_cmd(cmd: Commands, args: Vec<String>, redirects: Vec<Redirection>) ->
                 let Redirection { redirect, path } = redirect;
 
                 match redirect {
-                    redirection::Redirect::StdErr(append) => match &result {
-                        Ok(res) => {
-                            if let Some(res) = res
-                                && !redirect_out
-                            {
-                                println!("{res}");
+                    redirection::Redirect::StdErr(append) => {
+                        writer::create_file(path, &append)?;
+                        match &result {
+                            Ok(res) => {
+                                if let Some(res) = res
+                                    && !redirect_out
+                                {
+                                    println!("{res}");
+                                }
+                            }
+                            Err(e) => writer::write_file(path, e.to_string().as_str(), &append)?,
+                        }
+                    }
+                    redirection::Redirect::StdOut(append) => {
+                        writer::create_file(path, &append)?;
+                        match &result {
+                            Ok(res) => writer::write_file(
+                                path,
+                                res.clone().unwrap_or(String::new()).as_str(),
+                                &append,
+                            )?,
+                            Err(e) => {
+                                if !redirect_err {
+                                    eprintln!("{e}");
+                                }
                             }
                         }
-                        Err(e) => writer::write_file(path, e.to_string().as_str(), &append)?,
-                    },
-                    redirection::Redirect::StdOut(append) => match &result {
-                        Ok(res) => writer::write_file(
-                            path,
-                            res.clone().unwrap_or(String::new()).as_str(),
-                            &append,
-                        )?,
-                        Err(e) => {
-                            if !redirect_err {
-                                eprintln!("{e}");
-                            }
-                        }
-                    },
+                    }
                 }
             }
             Ok(())

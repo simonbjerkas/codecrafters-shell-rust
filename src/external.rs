@@ -35,11 +35,7 @@ impl External {
         format!("{}: not found", self.name())
     }
 
-    pub fn execute_external(
-        &self,
-        args: Vec<String>,
-        redirects: Vec<Redirection>,
-    ) -> Result<Option<String>> {
+    pub fn execute_external(&self, args: Vec<String>, redirects: Vec<Redirection>) -> Result<()> {
         let key = "PATH";
         let paths = env::var(key)?;
         for path in env::split_paths(&paths) {
@@ -70,12 +66,10 @@ impl External {
             program.stdout(stdout);
             program.stderr(stderr);
 
-            let mut child = program
-                .spawn()
-                .map_err(|e| ShellError::Execution(e.to_string()))?;
+            let mut child = program.spawn()?;
             child.wait()?;
 
-            return Ok(None);
+            return Ok(());
         }
 
         Err(ShellError::Execution(format!("{}: command not found", self.name())).into())
