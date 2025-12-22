@@ -1,10 +1,10 @@
 use anyhow::Result;
 
 use super::lexer::{Token, TokenType};
-use codecrafters_shell::{Commands, Redirection, ShellCommand, ShellError, redirection};
+use codecrafters_shell::{Commands, Redirection, ShellError, redirection};
 
 pub struct ParsedInput {
-    pub cmd: Box<dyn ShellCommand>,
+    pub cmd: Commands,
     pub args: Vec<String>,
 }
 

@@ -1,7 +1,10 @@
 use anyhow::Result;
-use std::{env, path, process};
+use std::{
+    env, path,
+    process::{self, Stdio},
+};
 
-use super::{ShellCommand, ShellError, is_executable};
+use super::{Redirect, Redirection, ShellError, is_executable, writer};
 
 pub struct External {
     cmd: String,
@@ -13,12 +16,12 @@ impl External {
     }
 }
 
-impl ShellCommand for External {
+impl External {
     fn name(&self) -> &str {
         &self.cmd
     }
 
-    fn description(&self) -> String {
+    pub fn description(&self) -> String {
         let key = "PATH";
         if let Some(paths) = env::var_os(key) {
             for path in env::split_paths(&paths) {
@@ -32,7 +35,11 @@ impl ShellCommand for External {
         format!("{}: not found", self.name())
     }
 
-    fn execute(&self, args: Vec<String>) -> Result<Option<String>> {
+    pub fn execute_external(
+        &self,
+        args: Vec<String>,
+        redirects: Vec<Redirection>,
+    ) -> Result<Option<String>> {
         let key = "PATH";
         let paths = env::var(key)?;
         for path in env::split_paths(&paths) {
@@ -42,11 +49,32 @@ impl ShellCommand for External {
             };
 
             let mut program = process::Command::new(self.name());
+            program.args(args);
+
+            let mut stdout = Stdio::inherit();
+            let mut stderr = Stdio::inherit();
+
+            for redirect in redirects {
+                match redirect.redirect {
+                    Redirect::StdOut(append) => {
+                        let file = writer::create_file(redirect.path, &append)?;
+                        stdout = Stdio::from(file);
+                    }
+                    Redirect::StdErr(append) => {
+                        let file = writer::create_file(redirect.path, &append)?;
+                        stderr = Stdio::from(file);
+                    }
+                }
+            }
+
+            program.stdout(stdout);
+            program.stderr(stderr);
+
             let mut child = program
-                .args(args.clone())
                 .spawn()
                 .map_err(|e| ShellError::Execution(e.to_string()))?;
-            let _status = child.wait();
+            child.wait()?;
+
             return Ok(None);
         }
 
