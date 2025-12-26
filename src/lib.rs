@@ -42,21 +42,20 @@ fn is_executable(path: &std::path::Path) -> bool {
         .unwrap_or(false)
 }
 
-pub fn run_cmd(cmd: Commands, args: Vec<String>, redirects: Vec<Redirection>) -> Result<()> {
+pub fn run_cmd(
+    cmd: Commands,
+    args: Vec<String>,
+    redirects: Vec<Redirection>,
+) -> Result<Option<String>> {
     match cmd {
         Commands::Builtin(cmd) => {
             let result = cmd.execute(args);
 
             if redirects.is_empty() {
                 match result {
-                    Ok(res) => {
-                        if let Some(res) = res {
-                            println!("{res}");
-                        }
-                    }
-                    Err(e) => eprintln!("{e}"),
+                    Ok(res) => return Ok(res),
+                    Err(e) => return Err(e),
                 }
-                return Ok(());
             };
 
             let redirect_out = redirects
@@ -77,7 +76,7 @@ pub fn run_cmd(cmd: Commands, args: Vec<String>, redirects: Vec<Redirection>) ->
                                 if let Some(res) = res
                                     && !redirect_out
                                 {
-                                    println!("{res}");
+                                    return Ok(Some(res.to_string()));
                                 }
                             }
                             Err(e) => writer::write_file(path, e.to_string().as_str(), &append)?,
@@ -93,18 +92,18 @@ pub fn run_cmd(cmd: Commands, args: Vec<String>, redirects: Vec<Redirection>) ->
                             )?,
                             Err(e) => {
                                 if !redirect_err {
-                                    eprintln!("{e}");
+                                    return Err(ShellError::Execution(e.to_string()).into());
                                 }
                             }
                         }
                     }
                 }
             }
-            Ok(())
+            Ok(None)
         }
         Commands::External(cmd) => {
             cmd.execute_external(args, redirects)?;
-            Ok(())
+            Ok(None)
         }
     }
 }

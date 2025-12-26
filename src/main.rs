@@ -1,39 +1,103 @@
 mod lexer;
 mod parser;
+mod shell;
 
 use anyhow::Result;
+use shell::Shell;
 use std::io::{self, Write};
+use termion::raw::{IntoRawMode, RawTerminal};
 
 fn main() {
+    let prompt = "$ ";
+
+    let mut stdin = io::stdin().lock();
+    let mut out = Out::Raw(io::stdout().into_raw_mode().unwrap());
+
+    let mut shell = Shell::new();
+
     loop {
-        print!("$ ");
-        io::stdout().flush().unwrap();
+        shell.redraw(&mut out, prompt);
 
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).unwrap();
+        let input = match shell.run(&mut stdin, &mut out, prompt) {
+            Ok(inp) => inp,
+            Err(_) => break,
+        };
 
-        let Some(tokens) = handle_result(lexer::run_lexer(&input)) else {
+        let Some(tokens) = handle_result(lexer::run_lexer(&input), &mut out, prompt, &shell) else {
             continue;
         };
 
-        let Some((parsed, redirection)) = handle_result(parser::parse(tokens)) else {
+        let Some((parsed, redirection)) =
+            handle_result(parser::parse(tokens), &mut out, prompt, &shell)
+        else {
             continue;
         };
 
         if let Some(parsed) = parsed {
-            if let Err(e) = codecrafters_shell::run_cmd(parsed.cmd, parsed.args, redirection) {
-                eprintln!("{e}");
+            let result = with_cooked_terminal(&mut out, || {
+                codecrafters_shell::run_cmd(parsed.cmd, parsed.args, redirection)
+            });
+
+            match result {
+                Ok(Some(res)) => {
+                    print_and_redraw(&mut out, prompt, &shell, &res);
+                }
+                Ok(None) => {}
+                Err(e) => print_and_redraw(&mut out, prompt, &shell, &e.to_string()),
             }
         }
     }
 }
 
-fn handle_result<T>(data: Result<T>) -> Option<T> {
+fn print_and_redraw(out: &mut Out, prompt: &str, shell: &Shell, msg: &str) {
+    write!(out, "\r{msg}\r\n").unwrap();
+    out.flush().unwrap();
+    shell.redraw(out, prompt);
+}
+
+enum Out {
+    Cooked(io::Stdout),
+    Raw(RawTerminal<io::Stdout>),
+}
+
+impl Write for Out {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        match self {
+            Out::Cooked(o) => o.write(buf),
+            Out::Raw(o) => o.write(buf),
+        }
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        match self {
+            Out::Cooked(o) => o.flush(),
+            Out::Raw(o) => o.flush(),
+        }
+    }
+}
+
+fn handle_result<T>(data: Result<T>, err: &mut Out, prompt: &str, shell: &Shell) -> Option<T> {
     match data {
         Ok(data) => return Some(data),
         Err(e) => {
-            eprintln!("{e}");
+            print_and_redraw(err, prompt, shell, &e.to_string());
             return None;
         }
     }
+}
+
+fn with_cooked_terminal<T>(out: &mut Out, f: impl FnOnce() -> T) -> T {
+    out.flush().unwrap();
+
+    write!(out, "\r").unwrap();
+    out.flush().unwrap();
+
+    *out = Out::Cooked(io::stdout());
+
+    let res = f();
+    out.flush().unwrap();
+
+    *out = Out::Raw(io::stdout().into_raw_mode().unwrap());
+
+    res
 }
