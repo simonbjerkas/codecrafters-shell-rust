@@ -42,6 +42,45 @@ fn is_executable(path: &std::path::Path) -> bool {
         .unwrap_or(false)
 }
 
+pub fn search_executables(partial: &str) -> Result<Vec<String>> {
+    let mut possibilities = Vec::new();
+    let key = "PATH";
+    let paths = std::env::var(key)?;
+
+    for path in std::env::split_paths(&paths) {
+        let Some(dirs) = std::fs::read_dir(path).ok() else {
+            continue;
+        };
+
+        for f in dirs {
+            let Some(f) = f.ok() else {
+                continue;
+            };
+            let file_name = f.file_name().display().to_string();
+            let is_executable = f
+                .metadata()
+                .map(|metadata| {
+                    let mode = metadata.mode();
+                    let owner_executable = (mode & 0o100) != 0;
+                    let group_executable = (mode & 0o010) != 0;
+                    let others_executable = (mode & 0o001) != 0;
+                    if owner_executable || group_executable || others_executable {
+                        true
+                    } else {
+                        false
+                    }
+                })
+                .unwrap_or(false);
+
+            if file_name.starts_with(partial) && is_executable {
+                possibilities.push(format!("{} ", f.file_name().display()));
+            }
+        }
+    }
+
+    Ok(possibilities)
+}
+
 pub fn run_cmd(
     cmd: Commands,
     args: Vec<String>,
