@@ -53,8 +53,6 @@ impl Shell {
                     self.buffer.clear();
                     self.cursor = 0;
 
-                    self.redraw(out, prompt);
-
                     return Ok(line);
                 }
 
