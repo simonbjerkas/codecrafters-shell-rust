@@ -27,24 +27,19 @@ fn main() {
             continue;
         };
 
-        let Some((parsed, redirection)) =
-            handle_result(parser::parse(tokens), &mut out, prompt, &shell)
-        else {
+        let Some(parsed) = handle_result(parser::parse(tokens), &mut out, prompt, &shell) else {
             continue;
         };
 
-        if let Some(parsed) = parsed {
-            let result = with_cooked_terminal(&mut out, || {
-                codecrafters_shell::run_cmd(parsed.cmd, parsed.args, redirection)
-            });
+        let result =
+            with_cooked_terminal(&mut out, || codecrafters_shell::execute_pipeline(parsed));
 
-            match result {
-                Ok(Some(res)) => {
-                    print_and_redraw(&mut out, prompt, &shell, &res);
-                }
-                Ok(None) => {}
-                Err(e) => print_and_redraw(&mut out, prompt, &shell, &e.to_string()),
+        match result {
+            Ok(Some(res)) => {
+                print_and_redraw(&mut out, prompt, &shell, &res);
             }
+            Ok(None) => {}
+            Err(e) => print_and_redraw(&mut out, prompt, &shell, &e.to_string()),
         }
     }
 }

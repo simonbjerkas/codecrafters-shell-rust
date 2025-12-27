@@ -1,10 +1,10 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Redirect {
     StdOut(bool),
     StdErr(bool),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Redirection<'a> {
     pub redirect: Redirect,
     pub path: &'a str,

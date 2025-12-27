@@ -1,23 +1,37 @@
 use anyhow::Result;
 
 use super::lexer::{Token, TokenType};
-use codecrafters_shell::{Commands, Redirection, ShellError, redirection};
+use codecrafters_shell::{
+    CommandStage, Commands, ParsedLine, Redirection, ShellError, redirection,
+};
 
-pub struct ParsedInput {
-    pub cmd: Commands,
-    pub args: Vec<String>,
+pub fn parse(tokens: Vec<Token>) -> Result<ParsedLine> {
+    let pipes: Vec<Vec<Token>> = tokens
+        .split(|token| token.token_type == TokenType::Pipe)
+        .map(|chunk| chunk.to_vec())
+        .collect();
+
+    let mut line = Vec::new();
+    for pipe in pipes {
+        let parsed = parse_command(pipe)?;
+        if parsed.is_some() {
+            line.push(parsed.unwrap());
+        }
+    }
+
+    Ok(ParsedLine::Pipeline(line))
 }
 
-pub fn parse(tokens: Vec<Token>) -> Result<(Option<ParsedInput>, Vec<Redirection>)> {
+fn parse_command(tokens: Vec<Token>) -> Result<Option<CommandStage>> {
     let mut tokens = tokens.iter();
     let Some(cmd) = tokens.next().map(|token| {
         return Commands::new(&token.origin);
     }) else {
-        return Ok((None, Vec::new()));
+        return Ok(None);
     };
 
     let mut args: Vec<String> = Vec::new();
-    let mut redirection: Vec<Redirection> = Vec::new();
+    let mut redirects: Vec<Redirection> = Vec::new();
     let mut current_arg = String::new();
 
     while let Some(token) = tokens.next() {
@@ -25,7 +39,7 @@ pub fn parse(tokens: Vec<Token>) -> Result<(Option<ParsedInput>, Vec<Redirection
             let Some(path_token) = tokens.next() else {
                 return Err(ShellError::MissingArg.into());
             };
-            redirection.push(Redirection::new(
+            redirects.push(Redirection::new(
                 redirection::eval_redirect(token.origin),
                 path_token.origin,
             ));
@@ -48,9 +62,13 @@ pub fn parse(tokens: Vec<Token>) -> Result<(Option<ParsedInput>, Vec<Redirection
         args.push(current_arg);
     }
 
-    let parsed = Some(ParsedInput { cmd, args });
+    let parsed = Some(CommandStage {
+        cmd,
+        args,
+        redirects,
+    });
 
-    Ok((parsed, redirection))
+    Ok(parsed)
 }
 
 fn process_escaped(input: &str) -> String {

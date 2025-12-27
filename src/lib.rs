@@ -81,7 +81,28 @@ pub fn search_executables(partial: &str) -> Result<Vec<String>> {
     Ok(possibilities)
 }
 
-pub fn run_cmd(
+pub enum ParsedLine<'a> {
+    Pipeline(Vec<CommandStage<'a>>),
+}
+
+pub struct CommandStage<'a> {
+    pub cmd: Commands,
+    pub args: Vec<String>,
+    pub redirects: Vec<Redirection<'a>>,
+}
+
+pub fn execute_pipeline(line: ParsedLine) -> Result<Option<String>> {
+    let ParsedLine::Pipeline(stages) = line;
+
+    let mut result = None;
+    for stage in stages {
+        result = run_cmd(stage.cmd, stage.args, stage.redirects)?;
+    }
+
+    Ok(result)
+}
+
+fn run_cmd(
     cmd: Commands,
     args: Vec<String>,
     redirects: Vec<Redirection>,

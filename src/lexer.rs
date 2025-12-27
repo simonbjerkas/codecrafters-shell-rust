@@ -7,6 +7,7 @@ pub enum TokenType {
     DoubleQuote,
     Redirects,
     Escaped,
+    Pipe,
 }
 
 #[derive(Clone, Debug)]
@@ -42,6 +43,7 @@ impl<'a> Iterator for Lexer<'a> {
                 SingleQuote,
                 Escape,
                 Redirection,
+                Pipe,
             }
 
             let compare_next = |c| match chars.clone().peekable().peek() {
@@ -54,6 +56,7 @@ impl<'a> Iterator for Lexer<'a> {
                 '\'' => Started::SingleQuote,
                 '\\' => Started::Escape,
                 '>' => Started::Redirection,
+                '|' => Started::Pipe,
                 '1' if compare_next('>') => Started::Redirection,
                 '2' if compare_next('>') => Started::Redirection,
                 c if c.is_whitespace() => continue,
@@ -144,6 +147,16 @@ impl<'a> Iterator for Lexer<'a> {
                     return Some(Ok(Token {
                         origin,
                         token_type: TokenType::Redirects,
+                        is_adjacent: false,
+                    }));
+                }
+                Started::Pipe => {
+                    let origin = &current_str[..current_str.len()];
+                    self.rest = &current_str[current_str.len()..];
+
+                    return Some(Ok(Token {
+                        origin,
+                        token_type: TokenType::Pipe,
                         is_adjacent: false,
                     }));
                 }
