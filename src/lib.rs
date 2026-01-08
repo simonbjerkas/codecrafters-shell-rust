@@ -95,7 +95,6 @@ pub struct CommandStage<'a> {
 
 pub fn execute_pipeline(line: ParsedLine) -> Result<Option<String>> {
     let ParsedLine::Pipeline(stages) = line;
-    println!("{stages:?}");
 
     let mut result = None;
     for stage in stages {
