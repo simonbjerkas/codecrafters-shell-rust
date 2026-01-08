@@ -2,6 +2,7 @@ use anyhow::Result;
 
 use super::ShellCommand;
 
+#[derive(Debug)]
 pub struct Echo;
 
 impl ShellCommand for Echo {

@@ -4,6 +4,8 @@ mod echo;
 mod exit;
 mod pwd;
 
+use std::fmt::Debug;
+
 use cd::Cd;
 use describe::Describe;
 use echo::Echo;
@@ -13,6 +15,7 @@ use pwd::Pwd;
 use super::ShellError;
 use anyhow::Result;
 
+#[derive(Debug)]
 pub struct Builtins;
 
 impl Builtins {
@@ -32,7 +35,7 @@ impl Builtins {
     }
 }
 
-pub trait ShellCommand {
+pub trait ShellCommand: Debug {
     fn name(&self) -> &str;
     fn description(&self) -> String {
         format!("{} is a shell builtin", self.name())

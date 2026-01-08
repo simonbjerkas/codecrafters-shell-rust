@@ -11,15 +11,15 @@ pub fn parse(tokens: Vec<Token>) -> Result<ParsedLine> {
         .map(|chunk| chunk.to_vec())
         .collect();
 
-    let mut line = Vec::new();
+    let mut lines = Vec::new();
     for pipe in pipes {
         let parsed = parse_command(pipe)?;
         if parsed.is_some() {
-            line.push(parsed.unwrap());
+            lines.push(parsed.unwrap());
         }
     }
 
-    Ok(ParsedLine::Pipeline(line))
+    Ok(ParsedLine::Pipeline(lines))
 }
 
 fn parse_command(tokens: Vec<Token>) -> Result<Option<CommandStage>> {

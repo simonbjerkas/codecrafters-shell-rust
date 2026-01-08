@@ -151,8 +151,8 @@ impl<'a> Iterator for Lexer<'a> {
                     }));
                 }
                 Started::Pipe => {
-                    let origin = &current_str[..current_str.len()];
-                    self.rest = &current_str[current_str.len()..];
+                    let origin = &current_str[..current.len_utf8()];
+                    self.rest = &current_str[current.len_utf8()..];
 
                     return Some(Ok(Token {
                         origin,

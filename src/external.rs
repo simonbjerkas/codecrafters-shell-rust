@@ -6,6 +6,7 @@ use std::{
 
 use super::{Redirect, Redirection, ShellError, is_executable, writer};
 
+#[derive(Debug)]
 pub struct External {
     cmd: String,
 }

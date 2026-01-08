@@ -3,6 +3,7 @@ use std::process;
 
 use super::ShellCommand;
 
+#[derive(Debug)]
 pub struct Exit;
 
 impl ShellCommand for Exit {

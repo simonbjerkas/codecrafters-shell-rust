@@ -3,6 +3,7 @@ use std::env;
 
 use super::{ShellCommand, ShellError};
 
+#[derive(Debug)]
 pub struct Cd;
 
 impl ShellCommand for Cd {

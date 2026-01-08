@@ -12,6 +12,7 @@ pub use error::ShellError;
 use external::External;
 pub use redirection::{Redirect, Redirection};
 
+#[derive(Debug)]
 pub enum Commands {
     Builtin(Box<dyn ShellCommand>),
     External(External),
@@ -85,6 +86,7 @@ pub enum ParsedLine<'a> {
     Pipeline(Vec<CommandStage<'a>>),
 }
 
+#[derive(Debug)]
 pub struct CommandStage<'a> {
     pub cmd: Commands,
     pub args: Vec<String>,
@@ -93,6 +95,7 @@ pub struct CommandStage<'a> {
 
 pub fn execute_pipeline(line: ParsedLine) -> Result<Option<String>> {
     let ParsedLine::Pipeline(stages) = line;
+    println!("{stages:?}");
 
     let mut result = None;
     for stage in stages {

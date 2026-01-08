@@ -2,6 +2,7 @@ use anyhow::Result;
 
 use super::{super::Commands, ShellCommand};
 
+#[derive(Debug)]
 pub struct Describe;
 
 impl ShellCommand for Describe {
