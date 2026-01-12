@@ -49,7 +49,7 @@ pub fn handle_history(line: &str) -> Result<()> {
         Err(_) => 1,
     };
 
-    let line = format!("    {} {}", line_count, line);
+    let line = format!("    {}  {}", line_count, line);
 
     writer::write_file(HISTORY_PATH, line.as_str(), &true)?;
     Ok(())
