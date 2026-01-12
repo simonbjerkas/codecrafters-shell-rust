@@ -7,7 +7,7 @@ use std::{
 
 use super::{ShellCommand, writer};
 
-const HISTORY_PATH: &'static str = "history.txt";
+const HISTORY_PATH: &'static str = "hist.txt";
 
 #[derive(Debug)]
 pub struct History;
