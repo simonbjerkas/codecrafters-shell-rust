@@ -32,7 +32,7 @@ impl ShellCommand for History {
             None => reader.lines().collect::<Result<_, _>>()?,
         };
 
-        println!("{}", hist.join("\n    "));
+        println!("    {}", hist.join("\n    "));
         Ok(None)
     }
 }
