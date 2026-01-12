@@ -17,9 +17,22 @@ impl ShellCommand for History {
         "history"
     }
 
-    fn execute(&self, _args: &Vec<String>) -> Result<Option<String>> {
-        let hist = fs::read_to_string(HISTORY_PATH)?;
-        println!("{}", hist.trim());
+    fn execute(&self, args: &Vec<String>) -> Result<Option<String>> {
+        let file = fs::File::open(HISTORY_PATH)?;
+        let reader = io::BufReader::new(file);
+
+        let take_last = args.first().and_then(|arg| arg.parse::<usize>().ok());
+
+        let hist: Vec<String> = match take_last {
+            Some(skip) => {
+                let lines: Vec<String> = reader.lines().collect::<Result<_, _>>()?;
+                let skip = lines.len() - skip;
+                lines.into_iter().skip(skip).collect()
+            }
+            None => reader.lines().collect::<Result<_, _>>()?,
+        };
+
+        println!("{}", hist.join("\n"));
         Ok(None)
     }
 }
