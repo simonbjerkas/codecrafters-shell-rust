@@ -1,7 +1,4 @@
-use std::{
-    cmp,
-    io::{self, Read, Write},
-};
+use std::io::{self, Read, Write};
 
 use anyhow::Result;
 use codecrafters_shell::{Builtins, ShellError};
