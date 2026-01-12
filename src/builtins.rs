@@ -2,6 +2,7 @@ mod cd;
 mod describe;
 mod echo;
 mod exit;
+mod history;
 mod pwd;
 
 use std::fmt::Debug;
@@ -10,6 +11,7 @@ use cd::Cd;
 use describe::Describe;
 use echo::Echo;
 use exit::Exit;
+use history::History;
 use pwd::Pwd;
 
 use super::ShellError;
@@ -26,12 +28,13 @@ impl Builtins {
             "pwd" => Some(Box::new(Pwd)),
             "type" => Some(Box::new(Describe)),
             "cd" => Some(Box::new(Cd)),
+            "history" => Some(Box::new(History)),
             _ => None,
         }
     }
 
     pub fn all_builtins() -> Vec<&'static str> {
-        Vec::from(["exit", "echo", "pwd", "type", "cd"])
+        Vec::from(["exit", "echo", "pwd", "type", "cd", "history"])
     }
 }
 
