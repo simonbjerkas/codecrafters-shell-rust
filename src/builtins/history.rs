@@ -7,7 +7,7 @@ use std::{
 
 use super::{ShellCommand, writer};
 
-const HISTORY_PATH: &'static str = "hist.txt";
+const HISTORY_PATH: &'static str = "history.txt";
 
 #[derive(Debug)]
 pub struct History;
@@ -32,7 +32,7 @@ impl ShellCommand for History {
             None => reader.lines().collect::<Result<_, _>>()?,
         };
 
-        println!("{}", hist.join("\n"));
+        println!("{}", hist.join("\n    "));
         Ok(None)
     }
 }
