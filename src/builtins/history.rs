@@ -16,7 +16,7 @@ impl ShellCommand for History {
 
     fn execute(&self, _args: &Vec<String>) -> Result<Option<String>> {
         let hist = fs::read_to_string(HISTORY_PATH)?;
-        println!("{}", hist.trim());
+        println!("{}", hist);
         Ok(None)
     }
 }
