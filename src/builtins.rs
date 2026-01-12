@@ -15,7 +15,10 @@ use history::History;
 use pwd::Pwd;
 
 use super::ShellError;
+use super::writer;
 use anyhow::Result;
+
+pub use history::handle_history;
 
 #[derive(Debug)]
 pub struct Builtins;

@@ -1,4 +1,7 @@
-use std::io::{self, Read, Write};
+use std::{
+    cmp,
+    io::{self, Read, Write},
+};
 
 use anyhow::Result;
 use codecrafters_shell::{Builtins, ShellError};
@@ -8,6 +11,8 @@ pub struct Shell {
     buffer: Vec<char>,
     cursor: usize,
     last_event: Option<Key>,
+    history: Vec<String>,
+    hist_pos: usize,
 }
 
 impl Shell {
@@ -16,6 +21,8 @@ impl Shell {
             buffer: Vec::new(),
             cursor: 0,
             last_event: None,
+            history: Vec::new(),
+            hist_pos: 0,
         }
     }
 
@@ -63,6 +70,10 @@ impl Shell {
 
                     self.buffer.clear();
                     self.cursor = 0;
+                    self.history.push(line.clone());
+                    self.hist_pos = 0;
+
+                    codecrafters_shell::handle_history(&line)?;
 
                     return Ok(line);
                 }
@@ -119,6 +130,26 @@ impl Shell {
                 Key::Right => {
                     self.last_event = Some(Key::Right);
                     self.cursor = (self.cursor + 1).min(self.buffer.len());
+                    self.redraw(out, prompt);
+                }
+                Key::Up => {
+                    self.last_event = Some(Key::Up);
+                    self.hist_pos += 1;
+
+                    let idx = std::cmp::max(self.history.len() - self.hist_pos, 0);
+                    self.buffer = self.history[idx].chars().collect();
+                    self.cursor = self.buffer.len();
+
+                    self.redraw(out, prompt);
+                }
+                Key::Down => {
+                    self.last_event = Some(Key::Down);
+                    self.hist_pos = std::cmp::max(self.hist_pos - 1, 0);
+
+                    let idx = std::cmp::max(self.history.len() - self.hist_pos, 0);
+                    self.buffer = self.history[idx].chars().collect();
+                    self.cursor = self.buffer.len();
+
                     self.redraw(out, prompt);
                 }
                 Key::Home => {

@@ -13,7 +13,7 @@ pub mod redirection;
 mod writer;
 
 use anyhow::Result;
-pub use builtins::{Builtins, ShellCommand};
+pub use builtins::{Builtins, ShellCommand, handle_history};
 pub use error::ShellError;
 use external::External;
 pub use redirection::{Redirect, Redirection};
