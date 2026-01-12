@@ -11,7 +11,7 @@ impl ShellCommand for Cd {
         "cd"
     }
 
-    fn execute(&self, args: Vec<String>) -> Result<Option<String>> {
+    fn execute(&self, args: &Vec<String>) -> Result<Option<String>> {
         if args.len() > 1 {
             return Err(
                 ShellError::Execution(format!("{}: too many arguments", self.name())).into(),

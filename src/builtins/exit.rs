@@ -11,7 +11,7 @@ impl ShellCommand for Exit {
         "exit"
     }
 
-    fn execute(&self, args: Vec<String>) -> Result<Option<String>> {
+    fn execute(&self, args: &Vec<String>) -> Result<Option<String>> {
         let code = args.iter().next();
 
         match code {

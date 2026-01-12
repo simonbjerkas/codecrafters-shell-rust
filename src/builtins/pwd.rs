@@ -11,7 +11,7 @@ impl ShellCommand for Pwd {
         "pwd"
     }
 
-    fn execute(&self, args: Vec<String>) -> Result<Option<String>> {
+    fn execute(&self, args: &Vec<String>) -> Result<Option<String>> {
         if !args.is_empty() {
             return Err(
                 ShellError::Execution(format!("{}: too many arguments", self.name())).into(),

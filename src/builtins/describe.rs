@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use super::{super::Commands, ShellCommand};
+use super::{super::Cmds, ShellCommand};
 
 #[derive(Debug)]
 pub struct Describe;
@@ -10,11 +10,11 @@ impl ShellCommand for Describe {
         "type"
     }
 
-    fn execute(&self, args: Vec<String>) -> Result<Option<String>> {
+    fn execute(&self, args: &Vec<String>) -> Result<Option<String>> {
         if let Some(cmd_to_evaluate) = args.first() {
-            let description = match Commands::new(cmd_to_evaluate) {
-                Commands::Builtin(cmd) => cmd.description(),
-                Commands::External(cmd) => cmd.description(),
+            let description = match Cmds::new(cmd_to_evaluate) {
+                Cmds::Builtin(cmd) => cmd.description(),
+                Cmds::External(cmd) => cmd.description(),
             };
 
             return Ok(Some(description));

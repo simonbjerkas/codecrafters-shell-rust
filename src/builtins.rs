@@ -40,5 +40,5 @@ pub trait ShellCommand: Debug {
     fn description(&self) -> String {
         format!("{} is a shell builtin", self.name())
     }
-    fn execute(&self, args: Vec<String>) -> Result<Option<String>>;
+    fn execute(&self, args: &Vec<String>) -> Result<Option<String>>;
 }

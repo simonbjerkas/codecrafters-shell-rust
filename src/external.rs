@@ -1,10 +1,10 @@
-use anyhow::Result;
+use anyhow::{Ok, Result};
 use std::{
     env, path,
-    process::{self, Stdio},
+    process::{self, Command},
 };
 
-use super::{Redirect, Redirection, ShellError, is_executable, writer};
+use super::{ShellError, is_executable};
 
 #[derive(Debug)]
 pub struct External {
@@ -36,43 +36,25 @@ impl External {
         format!("{}: not found", self.name())
     }
 
-    pub fn execute_external(&self, args: Vec<String>, redirects: Vec<Redirection>) -> Result<()> {
-        let key = "PATH";
-        let paths = env::var(key)?;
-        for path in env::split_paths(&paths) {
-            let cmd_path = path.join(&self.name());
-            if !path::Path::new(&cmd_path).exists() || !is_executable(&cmd_path) {
-                continue;
-            };
+    pub fn build(&self, args: &Vec<String>) -> Result<Command> {
+        let mut program = build_command(self.name())?;
+        program.args(args);
 
-            let mut program = process::Command::new(self.name());
-            program.args(args);
-
-            let mut stdout = Stdio::inherit();
-            let mut stderr = Stdio::inherit();
-
-            for redirect in redirects {
-                match redirect.redirect {
-                    Redirect::StdOut(append) => {
-                        let file = writer::create_file(redirect.path, &append)?;
-                        stdout = Stdio::from(file);
-                    }
-                    Redirect::StdErr(append) => {
-                        let file = writer::create_file(redirect.path, &append)?;
-                        stderr = Stdio::from(file);
-                    }
-                }
-            }
-
-            program.stdout(stdout);
-            program.stderr(stderr);
-
-            let mut child = program.spawn()?;
-            child.wait()?;
-
-            return Ok(());
-        }
-
-        Err(ShellError::Execution(format!("{}: command not found", self.name())).into())
+        Ok(program)
     }
+}
+
+fn build_command(cmd: &str) -> Result<Command> {
+    let key = "PATH";
+    let paths = env::var(key)?;
+    for path in env::split_paths(&paths) {
+        let cmd_path = path.join(cmd);
+        if !path::Path::new(&cmd_path).exists() || !is_executable(&cmd_path) {
+            continue;
+        };
+
+        return Ok(process::Command::new(cmd));
+    }
+
+    Err(ShellError::Execution(format!("{cmd}: command not found")).into())
 }

@@ -1,9 +1,7 @@
 use anyhow::Result;
 
 use super::lexer::{Token, TokenType};
-use codecrafters_shell::{
-    CommandStage, Commands, ParsedLine, Redirection, ShellError, redirection,
-};
+use codecrafters_shell::{Cmds, CommandStage, ParsedLine, Redirection, ShellError, redirection};
 
 pub fn parse(tokens: Vec<Token>) -> Result<ParsedLine> {
     let pipes: Vec<Vec<Token>> = tokens
@@ -25,7 +23,7 @@ pub fn parse(tokens: Vec<Token>) -> Result<ParsedLine> {
 fn parse_command(tokens: Vec<Token>) -> Result<Option<CommandStage>> {
     let mut tokens = tokens.iter();
     let Some(cmd) = tokens.next().map(|token| {
-        return Commands::new(&token.origin);
+        return Cmds::new(&token.origin);
     }) else {
         return Ok(None);
     };

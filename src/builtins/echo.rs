@@ -10,7 +10,7 @@ impl ShellCommand for Echo {
         "echo"
     }
 
-    fn execute(&self, args: Vec<String>) -> Result<Option<String>> {
+    fn execute(&self, args: &Vec<String>) -> Result<Option<String>> {
         let display_string = format!("{}", args.join(" "));
         Ok(Some(display_string))
     }
