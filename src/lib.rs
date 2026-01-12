@@ -121,15 +121,13 @@ pub fn execute_pipeline(parsed: ParsedLine) -> Result<Option<String>> {
         match cmd {
             Cmds::Builtin(cmd) => {
                 if is_last {
-                    // Last stage: write directly to terminal/stdout
                     let result = cmd.execute(args);
-                    // Wait for any earlier externals.
+
                     for mut c in children {
                         let _ = c.wait();
                     }
                     return handle_builtin_redirection(redirects, result);
                 } else {
-                    // Middle stage: write into buffer for next stage
                     let mut out_buf: Vec<u8> = Vec::new();
                     let data = cmd.execute(args);
                     let result = handle_builtin_redirection(redirects, data)?;
@@ -145,7 +143,6 @@ pub fn execute_pipeline(parsed: ParsedLine) -> Result<Option<String>> {
             Cmds::External(cmd) => {
                 let mut cmd = cmd.build(args)?;
 
-                // stdin
                 match input_buf.take() {
                     Some(buf) => {
                         cmd.stdin(Stdio::piped());
@@ -166,13 +163,9 @@ pub fn execute_pipeline(parsed: ParsedLine) -> Result<Option<String>> {
                             Buf::Builtin(buf) => {
                                 let mut child = cmd.spawn()?;
 
-                                // Feed stdin with the buffer, then close it to signal EOF.
-                                // If you worry about blocking on huge buffers, do this in a thread.
                                 if let Some(mut child_stdin) = child.stdin.take() {
-                                    // For large data, thread avoids deadlocks if child also writes a lot.
                                     thread::spawn(move || {
                                         let _ = child_stdin.write_all(&buf);
-                                        // dropping child_stdin closes it
                                     });
                                 }
 
@@ -181,8 +174,6 @@ pub fn execute_pipeline(parsed: ParsedLine) -> Result<Option<String>> {
                         }
 
                         if !is_last {
-                            // For a simple approach, wait, read output, store as input_buf.
-                            // This loses streaming between externals but is simplest.
                             let last = children.pop().unwrap();
                             input_buf = if last.stdout.is_some() {
                                 Some(Buf::External(last.stdout.unwrap()))
@@ -193,11 +184,6 @@ pub fn execute_pipeline(parsed: ParsedLine) -> Result<Option<String>> {
                     }
 
                     None => {
-                        // stdin from shell or from previous external if we connected pipes.
-                        // Here we choose a direct streaming approach between externals:
-                        // - if this isn't the first stage and we have no input_buf, that means
-                        //   the previous stage was an external and we should have set input_buf.
-                        // So: if None, we use inherited stdin (shell).
                         cmd.stdin(Stdio::inherit());
 
                         if is_last {
@@ -225,7 +211,6 @@ pub fn execute_pipeline(parsed: ParsedLine) -> Result<Option<String>> {
         }
     }
 
-    // If we fall through, last command was external but we buffered; wait children.
     for mut c in children {
         let _ = c.wait();
     }

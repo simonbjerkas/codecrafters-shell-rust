@@ -36,7 +36,7 @@ fn main() {
 
         match result {
             Ok(Some(res)) => {
-                print_and_redraw(&mut out, prompt, &shell, &res);
+                print_and_redraw(&mut out, prompt, &shell, &res.trim());
             }
             Ok(None) => {}
             Err(e) => print_and_redraw(&mut out, prompt, &shell, &e.to_string()),

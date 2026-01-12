@@ -11,7 +11,7 @@ impl ShellCommand for Echo {
     }
 
     fn execute(&self, args: &Vec<String>) -> Result<Option<String>> {
-        let display_string = format!("{}", args.join(" "));
+        let display_string = format!("{}\n", args.join(" "));
         Ok(Some(display_string))
     }
 }
