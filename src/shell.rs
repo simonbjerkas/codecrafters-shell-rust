@@ -1,24 +1,24 @@
 use std::io::{self, Read, Write};
 
 use anyhow::Result;
-use codecrafters_shell::{Builtins, ShellError};
+use codecrafters_shell::{Builtins, ShellCtx, ShellError};
 use termion::{event::Key, input::TermRead};
 
 pub struct Shell {
+    pub ctx: ShellCtx,
     buffer: Vec<char>,
     cursor: usize,
     last_event: Option<Key>,
-    history: Vec<String>,
     hist_pos: usize,
 }
 
 impl Shell {
     pub fn new() -> Shell {
         Shell {
+            ctx: ShellCtx::default(),
             buffer: Vec::new(),
             cursor: 0,
             last_event: None,
-            history: Vec::new(),
             hist_pos: 0,
         }
     }
@@ -67,7 +67,7 @@ impl Shell {
 
                     self.buffer.clear();
                     self.cursor = 0;
-                    self.history.push(line.clone());
+                    self.ctx.history.push(line.clone());
                     self.hist_pos = 0;
 
                     codecrafters_shell::handle_history(&line)?;
@@ -133,8 +133,8 @@ impl Shell {
                     self.last_event = Some(Key::Up);
                     self.hist_pos += 1;
 
-                    let idx = std::cmp::max(self.history.len() - self.hist_pos, 0);
-                    self.buffer = self.history[idx].chars().collect();
+                    let idx = std::cmp::max(self.ctx.history.len() - self.hist_pos, 0);
+                    self.buffer = self.ctx.history[idx].chars().collect();
                     self.cursor = self.buffer.len();
 
                     self.redraw(out, prompt);
@@ -143,8 +143,8 @@ impl Shell {
                     self.last_event = Some(Key::Down);
                     self.hist_pos = std::cmp::max(self.hist_pos - 1, 0);
 
-                    let idx = std::cmp::max(self.history.len() - self.hist_pos, 0);
-                    self.buffer = self.history[idx].chars().collect();
+                    let idx = std::cmp::max(self.ctx.history.len() - self.hist_pos, 0);
+                    self.buffer = self.ctx.history[idx].chars().collect();
                     self.cursor = self.buffer.len();
 
                     self.redraw(out, prompt);

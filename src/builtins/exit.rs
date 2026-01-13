@@ -1,7 +1,7 @@
 use anyhow::Result;
 use std::process;
 
-use super::ShellCommand;
+use super::{ShellCommand, ShellCtx};
 
 #[derive(Debug)]
 pub struct Exit;
@@ -11,7 +11,7 @@ impl ShellCommand for Exit {
         "exit"
     }
 
-    fn execute(&self, args: &Vec<String>) -> Result<Option<String>> {
+    fn execute(&self, args: &Vec<String>, _ctx: &mut ShellCtx) -> Result<Option<String>> {
         let code = args.iter().next();
 
         match code {

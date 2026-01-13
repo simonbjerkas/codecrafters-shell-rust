@@ -31,8 +31,9 @@ fn main() {
             continue;
         };
 
-        let result =
-            with_cooked_terminal(&mut out, || codecrafters_shell::execute_pipeline(parsed));
+        let result = with_cooked_terminal(&mut out, || {
+            codecrafters_shell::execute_pipeline(parsed, &mut shell.ctx)
+        });
 
         match result {
             Ok(Some(res)) => {

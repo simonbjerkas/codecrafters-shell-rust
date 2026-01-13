@@ -1,7 +1,7 @@
 use anyhow::Result;
 use std::env;
 
-use super::{ShellCommand, ShellError};
+use super::{ShellCommand, ShellCtx, ShellError};
 
 #[derive(Debug)]
 pub struct Pwd;
@@ -11,7 +11,7 @@ impl ShellCommand for Pwd {
         "pwd"
     }
 
-    fn execute(&self, args: &Vec<String>) -> Result<Option<String>> {
+    fn execute(&self, args: &Vec<String>, _ctx: &mut ShellCtx) -> Result<Option<String>> {
         if !args.is_empty() {
             return Err(
                 ShellError::Execution(format!("{}: too many arguments", self.name())).into(),

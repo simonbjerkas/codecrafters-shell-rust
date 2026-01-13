@@ -14,8 +14,7 @@ use exit::Exit;
 use history::History;
 use pwd::Pwd;
 
-use super::ShellError;
-use super::writer;
+use super::{ShellCtx, ShellError, writer};
 use anyhow::Result;
 
 pub use history::handle_history;
@@ -46,5 +45,5 @@ pub trait ShellCommand: Debug {
     fn description(&self) -> String {
         format!("{} is a shell builtin", self.name())
     }
-    fn execute(&self, args: &Vec<String>) -> Result<Option<String>>;
+    fn execute(&self, args: &Vec<String>, ctx: &mut ShellCtx) -> Result<Option<String>>;
 }

@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use super::ShellCommand;
+use super::{ShellCommand, ShellCtx};
 
 #[derive(Debug)]
 pub struct Echo;
@@ -10,7 +10,7 @@ impl ShellCommand for Echo {
         "echo"
     }
 
-    fn execute(&self, args: &Vec<String>) -> Result<Option<String>> {
+    fn execute(&self, args: &Vec<String>, _ctx: &mut ShellCtx) -> Result<Option<String>> {
         let display_string = format!("{}\n", args.join(" "));
         Ok(Some(display_string))
     }

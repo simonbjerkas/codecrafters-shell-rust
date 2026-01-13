@@ -7,15 +7,19 @@ use std::{
 };
 
 mod builtins;
+mod context;
 mod error;
 mod external;
-pub mod redirection;
 mod writer;
 
+pub mod redirection;
+
 use anyhow::Result;
-pub use builtins::{Builtins, ShellCommand, handle_history};
-pub use error::ShellError;
 use external::External;
+
+pub use builtins::{Builtins, ShellCommand, handle_history};
+pub use context::ShellCtx;
+pub use error::ShellError;
 pub use redirection::{Redirect, Redirection};
 
 #[derive(Debug)]
@@ -99,7 +103,7 @@ pub struct CommandStage<'a> {
     pub redirects: Vec<Redirection<'a>>,
 }
 
-pub fn execute_pipeline(parsed: ParsedLine) -> Result<Option<String>> {
+pub fn execute_pipeline(parsed: ParsedLine, ctx: &mut ShellCtx) -> Result<Option<String>> {
     let ParsedLine::Pipeline(pipeline) = parsed;
 
     enum Buf {
@@ -121,7 +125,7 @@ pub fn execute_pipeline(parsed: ParsedLine) -> Result<Option<String>> {
         match cmd {
             Cmds::Builtin(cmd) => {
                 if is_last {
-                    let result = cmd.execute(args);
+                    let result = cmd.execute(args, ctx);
 
                     for mut c in children {
                         let _ = c.wait();
@@ -129,7 +133,7 @@ pub fn execute_pipeline(parsed: ParsedLine) -> Result<Option<String>> {
                     return handle_builtin_redirection(redirects, result);
                 } else {
                     let mut out_buf: Vec<u8> = Vec::new();
-                    let data = cmd.execute(args);
+                    let data = cmd.execute(args, ctx);
                     let result = handle_builtin_redirection(redirects, data)?;
 
                     if result.is_some() {
