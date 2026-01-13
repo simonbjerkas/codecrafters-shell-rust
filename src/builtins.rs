@@ -14,10 +14,8 @@ use exit::Exit;
 use history::History;
 use pwd::Pwd;
 
-use super::{ShellCtx, ShellError, writer};
+use super::{ShellCtx, ShellError};
 use anyhow::Result;
-
-pub use history::handle_history;
 
 #[derive(Debug)]
 pub struct Builtins;

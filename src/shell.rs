@@ -14,8 +14,13 @@ pub struct Shell {
 
 impl Shell {
     pub fn new() -> Shell {
+        let ctx = match ShellCtx::build() {
+            Ok(ctx) => ctx,
+            Err(_) => ShellCtx::default(),
+        };
+
         Shell {
-            ctx: ShellCtx::default(),
+            ctx,
             buffer: Vec::new(),
             cursor: 0,
             last_event: None,
@@ -67,10 +72,10 @@ impl Shell {
 
                     self.buffer.clear();
                     self.cursor = 0;
-                    self.ctx.history.push(line.clone());
-                    self.hist_pos = 0;
 
-                    codecrafters_shell::handle_history(&line)?;
+                    self.ctx.history.push(line.clone());
+                    self.ctx.handle_history(&line)?;
+                    self.hist_pos = 0;
 
                     return Ok(line);
                 }

@@ -17,7 +17,7 @@ pub mod redirection;
 use anyhow::Result;
 use external::External;
 
-pub use builtins::{Builtins, ShellCommand, handle_history};
+pub use builtins::{Builtins, ShellCommand};
 pub use context::ShellCtx;
 pub use error::ShellError;
 pub use redirection::{Redirect, Redirection};
