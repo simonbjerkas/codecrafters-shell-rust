@@ -29,7 +29,12 @@ impl ShellCtx {
     pub fn set_histfile(&mut self, path: String) -> Result<()> {
         self.histfile = Some(path.clone());
 
-        let file = fs::OpenOptions::new().create(true).open(path)?;
+        let file = fs::OpenOptions::new()
+            .create(true)
+            .read(true)
+            .append(true)
+            .open(path)?;
+
         let reader = io::BufReader::new(file);
 
         self.history = reader.lines().collect::<Result<_, _>>()?;
