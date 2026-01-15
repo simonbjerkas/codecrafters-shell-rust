@@ -132,7 +132,8 @@ impl ShellCtx {
 
     pub fn set_append_history(&mut self, path: &str) -> Result<()> {
         self.history.set_append(true);
-        self.set_write_history(path)?;
+        self.history.set_write(Some(path.to_string()));
+        self.history.save_to_file()?;
 
         Ok(())
     }
@@ -152,20 +153,15 @@ impl ShellCtx {
         &self.history.entries
     }
 
-    fn get_current(&mut self) -> Option<String> {
-        self.current_buf.take()
-    }
-
     pub fn get_history_entry(&mut self, pos: usize, current: String) -> String {
-        self.current_buf = match self.get_current() {
-            Some(existing) => Some(existing),
-            None => Some(current),
-        };
-        let entry = self.history.entries.iter().rev().nth(pos - 1);
+        let current_buf = self.current_buf.get_or_insert(current);
 
-        match entry {
-            Some(entry) => entry.to_string(),
-            None => self.get_current().unwrap_or_default(),
-        }
+        self.history
+            .entries
+            .iter()
+            .rev()
+            .nth(pos.saturating_sub(1))
+            .cloned()
+            .unwrap_or_else(|| current_buf.clone())
     }
 }
