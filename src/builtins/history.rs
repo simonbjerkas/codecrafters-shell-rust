@@ -36,14 +36,14 @@ impl ShellCommand for History {
                 let Some(path) = args.next() else {
                     return Err(ShellError::MissingArg.into());
                 };
-                ctx.set_write_history(path);
+                ctx.set_write_history(path)?;
                 return Ok(None);
             }
             Some(flag) if flag == "-a" => {
                 let Some(path) = args.next() else {
                     return Err(ShellError::MissingArg.into());
                 };
-                ctx.set_append_history(path);
+                ctx.set_append_history(path)?;
                 return Ok(None);
             }
             Some(_) => Vec::new(),

@@ -122,13 +122,19 @@ impl ShellCtx {
         Ok(())
     }
 
-    pub fn set_write_history(&mut self, path: &str) {
+    pub fn set_write_history(&mut self, path: &str) -> Result<()> {
+        self.history.set_append(false);
         self.history.set_write(Some(path.to_string()));
+        self.history.save_to_file()?;
+
+        Ok(())
     }
 
-    pub fn set_append_history(&mut self, path: &str) {
+    pub fn set_append_history(&mut self, path: &str) -> Result<()> {
         self.history.set_append(true);
-        self.set_write_history(path);
+        self.set_write_history(path)?;
+
+        Ok(())
     }
 
     pub fn handle_history(&mut self, line: &str) {
