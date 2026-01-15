@@ -13,15 +13,17 @@ fn main() {
     let mut stdin = io::stdin().lock();
     let mut out = Out::Raw(io::stdout().into_raw_mode().unwrap());
 
-    let mut shell = Shell::new();
+    let Ok(mut shell) = Shell::build() else {
+        eprintln!("Failed to initialize shell");
+        return;
+    };
 
     loop {
         shell.redraw(&mut out, prompt);
 
-        let input = match shell.run(&mut stdin, &mut out, prompt) {
-            Ok(inp) => inp,
-            Err(_) => break,
-        };
+        let input = shell
+            .run(&mut stdin, &mut out, prompt)
+            .expect("Failed to load messages from file");
 
         let Some(tokens) = handle_result(lexer::run_lexer(&input), &mut out, prompt, &shell) else {
             continue;

@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use super::{ShellCommand, ShellCtx};
+use super::{ShellCommand, ShellCtx, ShellError};
 
 #[derive(Debug)]
 pub struct History;
@@ -16,7 +16,7 @@ impl ShellCommand for History {
         let hist: Vec<String> = match args.next() {
             Some(skip) if skip.parse::<usize>().is_ok() => {
                 let entries: Vec<String> = ctx
-                    .history
+                    .get_history()
                     .iter()
                     .enumerate()
                     .map(|(idx, entry)| format!("    {}  {}", idx + 1, entry))
@@ -26,20 +26,36 @@ impl ShellCommand for History {
                 entries.into_iter().skip(skip).collect()
             }
             Some(flag) if flag == "-r" => {
-                let path = args.next().unwrap();
-                ctx.set_histfile(path.to_string())?;
+                let Some(path) = args.next() else {
+                    return Err(ShellError::MissingArg.into());
+                };
+                ctx.set_read_history(path)?;
+                return Ok(None);
+            }
+            Some(flag) if flag == "-w" => {
+                let Some(path) = args.next() else {
+                    return Err(ShellError::MissingArg.into());
+                };
+                ctx.set_write_history(path);
+                return Ok(None);
+            }
+            Some(flag) if flag == "-a" => {
+                let Some(path) = args.next() else {
+                    return Err(ShellError::MissingArg.into());
+                };
+                ctx.set_append_history(path);
                 return Ok(None);
             }
             Some(_) => Vec::new(),
             None => ctx
-                .history
+                .get_history()
                 .iter()
                 .enumerate()
                 .map(|(idx, entry)| format!("    {}  {}", idx + 1, entry))
                 .collect(),
         };
 
-        println!("    {}", hist.join("\n    "));
+        println!("{}", hist.join("\n"));
 
         Ok(None)
     }

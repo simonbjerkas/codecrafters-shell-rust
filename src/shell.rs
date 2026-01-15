@@ -13,19 +13,16 @@ pub struct Shell {
 }
 
 impl Shell {
-    pub fn new() -> Shell {
-        let ctx = match ShellCtx::build() {
-            Ok(ctx) => ctx,
-            Err(_) => ShellCtx::default(),
-        };
+    pub fn build() -> Result<Shell> {
+        let ctx = ShellCtx::build()?;
 
-        Shell {
+        Ok(Shell {
             ctx,
             buffer: Vec::new(),
             cursor: 0,
             last_event: None,
             hist_pos: 0,
-        }
+        })
     }
 
     pub fn redraw<W: io::Write>(&self, out: &mut W, prompt: &str) {
@@ -62,6 +59,7 @@ impl Shell {
             match key {
                 Key::Ctrl('c') => {
                     write!(out, "\r\n").unwrap();
+                    self.ctx.shut_down()?;
                     break;
                 }
 
@@ -73,8 +71,7 @@ impl Shell {
                     self.buffer.clear();
                     self.cursor = 0;
 
-                    self.ctx.history.push(line.clone());
-                    self.ctx.handle_history(&line)?;
+                    self.ctx.handle_history(&line);
                     self.hist_pos = 0;
 
                     return Ok(line);
@@ -138,8 +135,11 @@ impl Shell {
                     self.last_event = Some(Key::Up);
                     self.hist_pos += 1;
 
-                    let idx = std::cmp::max(self.ctx.history.len() - self.hist_pos, 0);
-                    self.buffer = self.ctx.history[idx].chars().collect();
+                    let entry = self
+                        .ctx
+                        .get_history_entry(self.hist_pos, self.current_buffer());
+
+                    self.buffer = entry.chars().collect();
                     self.cursor = self.buffer.len();
 
                     self.redraw(out, prompt);
@@ -148,8 +148,11 @@ impl Shell {
                     self.last_event = Some(Key::Down);
                     self.hist_pos = std::cmp::max(self.hist_pos - 1, 0);
 
-                    let idx = std::cmp::max(self.ctx.history.len() - self.hist_pos, 0);
-                    self.buffer = self.ctx.history[idx].chars().collect();
+                    let entry = self
+                        .ctx
+                        .get_history_entry(self.hist_pos, self.current_buffer());
+
+                    self.buffer = entry.chars().collect();
                     self.cursor = self.buffer.len();
 
                     self.redraw(out, prompt);

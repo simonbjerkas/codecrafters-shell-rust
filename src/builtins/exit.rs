@@ -11,13 +11,13 @@ impl ShellCommand for Exit {
         "exit"
     }
 
-    fn execute(&self, args: &Vec<String>, _ctx: &mut ShellCtx) -> Result<Option<String>> {
+    fn execute(&self, args: &Vec<String>, ctx: &mut ShellCtx) -> Result<Option<String>> {
         let code = args.iter().next();
 
         match code {
             Some(status) => {
                 let status = status.parse::<i32>();
-
+                ctx.shut_down()?;
                 match status {
                     Ok(status) => process::exit(status),
                     Err(_) => process::exit(0),
