@@ -59,10 +59,15 @@ impl HistCtx {
 
         if let Ok(mut reader) = fs::File::open(&path).map(io::BufReader::new) {
             io::copy(&mut reader, &mut writer)?;
-            self.entries = reader.lines().collect::<Result<_, _>>()?;
         }
 
         writer.flush()?;
+
+        self.entries = fs::File::open(&tmp_path)
+            .map(io::BufReader::new)?
+            .lines()
+            .collect::<Result<_, _>>()?;
+
         fs::rename(tmp_path, path)?;
         Ok(())
     }
