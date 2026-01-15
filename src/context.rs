@@ -47,6 +47,7 @@ impl HistCtx {
         self.read_path = path;
 
         let Some(path) = &self.read_path else {
+            self.breakpoint = 0;
             return Ok(());
         };
 
@@ -68,6 +69,8 @@ impl HistCtx {
             .lines()
             .collect::<Result<_, _>>()?;
 
+        self.breakpoint = self.entries.len();
+
         fs::rename(tmp_path, path)?;
         Ok(())
     }
@@ -80,13 +83,17 @@ impl HistCtx {
         self.append = append;
     }
 
+    fn set_breakpoint(&mut self, breakpoint: usize) {
+        self.breakpoint = breakpoint;
+    }
+
     fn add_entry(&mut self, line: &str) {
         self.entries.push(line.to_string());
     }
 
-    fn save_to_file(&self) -> Result<()> {
+    fn save_to_file(&self) -> Result<usize> {
         let Some(path) = &self.write_path else {
-            return Ok(());
+            return Ok(0);
         };
 
         let mut file = fs::OpenOptions::new()
@@ -99,7 +106,7 @@ impl HistCtx {
             writeln!(file, "{entry}")?;
         }
 
-        Ok(())
+        Ok(self.entries.len())
     }
 }
 
@@ -125,7 +132,8 @@ impl ShellCtx {
     pub fn set_write_history(&mut self, path: &str) -> Result<()> {
         self.history.set_append(false);
         self.history.set_write(Some(path.to_string()));
-        self.history.save_to_file()?;
+        let bp = self.history.save_to_file()?;
+        self.history.set_breakpoint(bp);
 
         Ok(())
     }
@@ -133,7 +141,8 @@ impl ShellCtx {
     pub fn set_append_history(&mut self, path: &str) -> Result<()> {
         self.history.set_append(true);
         self.history.set_write(Some(path.to_string()));
-        self.history.save_to_file()?;
+        let bp = self.history.save_to_file()?;
+        self.history.set_breakpoint(bp);
 
         Ok(())
     }
