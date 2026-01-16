@@ -38,10 +38,16 @@ impl Builtins {
     }
 }
 
+pub enum ExecResult {
+    Continue,
+    Res(String),
+    Exit(i32),
+}
+
 pub trait ShellCommand: Debug {
     fn name(&self) -> &str;
     fn description(&self) -> String {
         format!("{} is a shell builtin", self.name())
     }
-    fn execute(&self, args: &Vec<String>, ctx: &mut ShellCtx) -> Result<Option<String>>;
+    fn execute(&self, args: &Vec<String>, ctx: &mut ShellCtx) -> Result<ExecResult>;
 }

@@ -2,6 +2,8 @@ mod lexer;
 mod parser;
 mod shell;
 
+use codecrafters_shell::ExecResult;
+
 use anyhow::Result;
 use shell::Shell;
 use std::io::{self, Write};
@@ -13,17 +15,14 @@ fn main() {
     let mut stdin = io::stdin().lock();
     let mut out = Out::Raw(io::stdout().into_raw_mode().unwrap());
 
-    let Ok(mut shell) = Shell::build() else {
-        eprintln!("Failed to initialize shell");
-        return;
-    };
+    let mut shell = Shell::build().expect("Failed to load initialize shell");
 
     loop {
         shell.redraw(&mut out, prompt);
 
-        let input = shell
-            .run(&mut stdin, &mut out, prompt)
-            .expect("Failed to load messages from file");
+        let Ok(input) = shell.run(&mut stdin, &mut out, prompt) else {
+            break;
+        };
 
         let Some(tokens) = handle_result(lexer::run_lexer(&input), &mut out, prompt, &shell) else {
             continue;
@@ -38,10 +37,11 @@ fn main() {
         });
 
         match result {
-            Ok(Some(res)) => {
+            Ok(ExecResult::Res(res)) => {
                 print_and_redraw(&mut out, prompt, &shell, &res.trim());
             }
-            Ok(None) => {}
+            Ok(ExecResult::Exit(code)) => std::process::exit(code),
+            Ok(ExecResult::Continue) => {}
             Err(e) => print_and_redraw(&mut out, prompt, &shell, &e.to_string()),
         }
     }

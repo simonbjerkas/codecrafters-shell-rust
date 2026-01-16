@@ -1,7 +1,7 @@
 use anyhow::Result;
 use std::env;
 
-use super::{ShellCommand, ShellCtx, ShellError};
+use super::{ExecResult, ShellCommand, ShellCtx, ShellError};
 
 #[derive(Debug)]
 pub struct Cd;
@@ -11,7 +11,7 @@ impl ShellCommand for Cd {
         "cd"
     }
 
-    fn execute(&self, args: &Vec<String>, _ctx: &mut ShellCtx) -> Result<Option<String>> {
+    fn execute(&self, args: &Vec<String>, _ctx: &mut ShellCtx) -> Result<ExecResult> {
         if args.len() > 1 {
             return Err(
                 ShellError::Execution(format!("{}: too many arguments", self.name())).into(),
@@ -48,6 +48,6 @@ impl ShellCommand for Cd {
                 .expect("Could not find home directory"),
         }
 
-        Ok(None)
+        Ok(ExecResult::Continue)
     }
 }

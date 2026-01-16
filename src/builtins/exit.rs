@@ -1,7 +1,6 @@
 use anyhow::Result;
-use std::process;
 
-use super::{ShellCommand, ShellCtx};
+use super::{ExecResult, ShellCommand, ShellCtx};
 
 #[derive(Debug)]
 pub struct Exit;
@@ -11,19 +10,10 @@ impl ShellCommand for Exit {
         "exit"
     }
 
-    fn execute(&self, args: &Vec<String>, ctx: &mut ShellCtx) -> Result<Option<String>> {
-        let code = args.iter().next();
+    fn execute(&self, args: &Vec<String>, ctx: &mut ShellCtx) -> Result<ExecResult> {
+        let status = args.get(0).and_then(|s| s.parse::<i32>().ok()).unwrap_or(0);
 
-        match code {
-            Some(status) => {
-                let status = status.parse::<i32>();
-                ctx.shut_down()?;
-                match status {
-                    Ok(status) => process::exit(status),
-                    Err(_) => process::exit(0),
-                }
-            }
-            None => process::exit(0),
-        }
+        ctx.shut_down()?;
+        Ok(ExecResult::Exit(status))
     }
 }

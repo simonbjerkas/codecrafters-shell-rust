@@ -17,7 +17,7 @@ pub mod redirection;
 use anyhow::Result;
 use external::External;
 
-pub use builtins::{Builtins, ShellCommand};
+pub use builtins::{Builtins, ExecResult, ShellCommand};
 pub use context::ShellCtx;
 pub use error::ShellError;
 pub use redirection::{Redirect, Redirection};
@@ -103,7 +103,7 @@ pub struct CommandStage<'a> {
     pub redirects: Vec<Redirection<'a>>,
 }
 
-pub fn execute_pipeline(parsed: ParsedLine, ctx: &mut ShellCtx) -> Result<Option<String>> {
+pub fn execute_pipeline(parsed: ParsedLine, ctx: &mut ShellCtx) -> Result<ExecResult> {
     let ParsedLine::Pipeline(pipeline) = parsed;
 
     enum Buf {
@@ -136,8 +136,8 @@ pub fn execute_pipeline(parsed: ParsedLine, ctx: &mut ShellCtx) -> Result<Option
                     let data = cmd.execute(args, ctx);
                     let result = handle_builtin_redirection(redirects, data)?;
 
-                    if result.is_some() {
-                        out_buf.extend_from_slice(result.unwrap().as_bytes());
+                    if let ExecResult::Res(res) = result {
+                        out_buf.extend_from_slice(res.as_bytes());
                     }
 
                     input_buf = Some(Buf::Builtin(out_buf));
@@ -218,13 +218,13 @@ pub fn execute_pipeline(parsed: ParsedLine, ctx: &mut ShellCtx) -> Result<Option
     for mut c in children {
         let _ = c.wait();
     }
-    Ok(None)
+    Ok(ExecResult::Continue)
 }
 
 fn handle_builtin_redirection(
     redirects: &Vec<Redirection>,
-    data: Result<Option<String>>,
-) -> Result<Option<String>> {
+    data: Result<ExecResult>,
+) -> Result<ExecResult> {
     if redirects.is_empty() {
         return data;
     };
@@ -244,10 +244,10 @@ fn handle_builtin_redirection(
                 writer::create_file(path, &append)?;
                 match &data {
                     Ok(res) => {
-                        if let Some(res) = res
+                        if let ExecResult::Res(res) = res
                             && !redirect_out
                         {
-                            return Ok(Some(res.to_string()));
+                            return Ok(ExecResult::Res(res.to_string()));
                         }
                     }
                     Err(e) => writer::write_file(path, e.to_string().as_str(), &append)?,
@@ -256,11 +256,10 @@ fn handle_builtin_redirection(
             redirection::Redirect::StdOut(append) => {
                 writer::create_file(path, &append)?;
                 match &data {
-                    Ok(res) => writer::write_file(
-                        path,
-                        res.clone().unwrap_or(String::new()).as_str(),
-                        &append,
-                    )?,
+                    Ok(ExecResult::Res(res)) => {
+                        writer::write_file(path, res.clone().as_ref(), &append)?
+                    }
+                    Ok(_) => writer::write_file(path, "", &append)?,
                     Err(e) => {
                         if !redirect_err {
                             return Err(ShellError::Execution(e.to_string()).into());
@@ -270,7 +269,7 @@ fn handle_builtin_redirection(
             }
         }
     }
-    Ok(None)
+    Ok(ExecResult::Continue)
 }
 
 fn handle_external_redirection(redirects: &Vec<Redirection>, cmd: &mut Command) -> Result<()> {

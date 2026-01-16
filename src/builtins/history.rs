@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use super::{ShellCommand, ShellCtx, ShellError};
+use super::{ExecResult, ShellCommand, ShellCtx, ShellError};
 
 #[derive(Debug)]
 pub struct History;
@@ -10,7 +10,7 @@ impl ShellCommand for History {
         "history"
     }
 
-    fn execute(&self, args: &Vec<String>, ctx: &mut ShellCtx) -> Result<Option<String>> {
+    fn execute(&self, args: &Vec<String>, ctx: &mut ShellCtx) -> Result<ExecResult> {
         let mut args = args.iter().to_owned();
 
         let hist: Vec<String> = match args.next() {
@@ -30,21 +30,21 @@ impl ShellCommand for History {
                     return Err(ShellError::MissingArg.into());
                 };
                 ctx.set_read_history(path)?;
-                return Ok(None);
+                return Ok(ExecResult::Continue);
             }
             Some(flag) if flag == "-w" => {
                 let Some(path) = args.next() else {
                     return Err(ShellError::MissingArg.into());
                 };
                 ctx.set_write_history(path)?;
-                return Ok(None);
+                return Ok(ExecResult::Continue);
             }
             Some(flag) if flag == "-a" => {
                 let Some(path) = args.next() else {
                     return Err(ShellError::MissingArg.into());
                 };
                 ctx.set_append_history(path)?;
-                return Ok(None);
+                return Ok(ExecResult::Continue);
             }
             Some(_) => Vec::new(),
             None => ctx
@@ -57,6 +57,6 @@ impl ShellCommand for History {
 
         println!("{}", hist.join("\n"));
 
-        Ok(None)
+        Ok(ExecResult::Continue)
     }
 }
