@@ -1,35 +1,61 @@
-[![progress-banner](https://backend.codecrafters.io/progress/shell/b1045591-b9f5-4c69-9af7-dea34a20723b)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+# shell-rust
 
-This is a starting point for Rust solutions to the
-["Build Your Own Shell" Challenge](https://app.codecrafters.io/courses/shell/overview).
+A POSIX-compliant shell built in Rust. Supports command pipelines, I/O redirection, interactive line editing, tab completion, and persistent history — written as part of the [CodeCrafters "Build Your Own Shell"](https://app.codecrafters.io/courses/shell/overview) challenge.
 
-In this challenge, you'll build your own POSIX compliant shell that's capable of
-interpreting shell commands, running external programs and builtin commands like
-cd, pwd, echo and more. Along the way, you'll learn about shell command parsing,
-REPLs, builtin commands, and more.
+## Features
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+- **Interactive line editing** — cursor movement, Home/End, Backspace, Delete
+- **History navigation** — Up/Down arrows, persisted across sessions via `HISTFILE`
+- **Tab completion** — autocompletes builtin and PATH-discovered executables
+- **Pipelines** — pipe builtins and external commands together with `|`
+- **I/O redirection** — `>`, `>>`, `2>`, `2>>`, `1>`, `1>>`
+- **Quoting and escaping** — single quotes, double quotes, backslash escapes
+- **Tilde expansion** — `~` resolves to `$HOME`
 
-# Passing the first stage
+## Builtins
 
-The entry point for your `shell` implementation is in `src/main.rs`. Study and
-uncomment the relevant code, and push your changes to pass the first stage:
+| Command   | Description                                      |
+|-----------|--------------------------------------------------|
+| `cd`      | Change directory; `cd` alone goes to `$HOME`     |
+| `echo`    | Print arguments to stdout                        |
+| `pwd`     | Print current working directory                  |
+| `exit`    | Exit with optional exit code (default 0)         |
+| `type`    | Show whether a command is a builtin or external  |
+| `history` | Display history; supports `-r`/`-w`/`-a` flags   |
 
-```sh
-git commit -am "pass 1st stage" # any msg
-git push origin master
+## Project Structure
+
+```
+src/
+├── main.rs          # REPL entry point
+├── lib.rs           # Pipeline execution engine
+├── shell.rs         # Terminal UI and keyboard input (termion)
+├── lexer.rs         # Tokeniser — handles quotes, escapes, operators
+├── parser.rs        # Converts tokens to a pipeline of commands
+├── context.rs       # Shell state: history and current buffer
+├── builtins.rs      # Builtin command factory
+├── builtins/        # Individual builtin implementations
+├── external.rs      # External command lookup and execution
+├── redirection.rs   # Redirect enum and operator parsing
+├── writer.rs        # File write/append utilities
+└── error.rs         # Error types
 ```
 
-Time to move on to the next stage!
+## Running
 
-# Stage 2 & beyond
+```sh
+cargo run
+```
 
-Note: This section is for stages 2 and beyond.
+Or use the provided wrapper:
 
-1. Ensure you have `cargo (1.87)` installed locally
-1. Run `./your_program.sh` to run your program, which is implemented in
-   `src/main.rs`. This command compiles your Rust project, so it might be slow
-   the first time you run it. Subsequent runs will be fast.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+```sh
+./your_program.sh
+```
+
+## Dependencies
+
+- [`termion`](https://crates.io/crates/termion) — raw terminal mode, key input, cursor control
+- [`anyhow`](https://crates.io/crates/anyhow) — flexible error handling
+- [`thiserror`](https://crates.io/crates/thiserror) — derive macros for error types
+- [`bytes`](https://crates.io/crates/bytes) — buffer management for piped output
